@@ -17,6 +17,20 @@ export interface PhotoSubmission {
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
+  window?: {
+    id: string;
+    location_description: string | null;
+    church: {
+      id: string;
+      name: string;
+      county: string;
+      town: string;
+      floor_plan_url: string | null;
+    };
+  } | null;
+  user?: {
+    app_id: string;
+  };
 }
 
 export interface CreatePhotoSubmissionParams {
@@ -172,6 +186,54 @@ export async function getSubmissionsNeedingManualAssignment(
     data: PhotoSubmission[];
     count: number;
   }>('/submissions/manual-assignment/needed', { params });
+  return response.data;
+}
+
+export interface UpdatePhotoSubmissionParams {
+  window_id?: string | null;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Update a photo submission (only editable fields: window_id, metadata)
+ */
+export async function updatePhotoSubmission(
+  submissionId: string,
+  updates: UpdatePhotoSubmissionParams,
+  appId: string
+): Promise<{ success: boolean; data: PhotoSubmission; message: string }> {
+  const response = await apiClient.patch<{
+    success: boolean;
+    data: PhotoSubmission;
+    message: string;
+  }>(
+    `/submissions/${submissionId}`,
+    updates,
+    {
+      headers: {
+        'x-app-id': appId,
+      },
+    }
+  );
+  return response.data;
+}
+
+/**
+ * Delete a photo submission (soft delete)
+ */
+export async function deletePhotoSubmission(
+  submissionId: string,
+  appId: string
+): Promise<{ success: boolean; data: { success: boolean; message: string }; message: string }> {
+  const response = await apiClient.delete<{
+    success: boolean;
+    data: { success: boolean; message: string };
+    message: string;
+  }>(`/submissions/${submissionId}`, {
+    headers: {
+      'x-app-id': appId,
+    },
+  });
   return response.data;
 }
 

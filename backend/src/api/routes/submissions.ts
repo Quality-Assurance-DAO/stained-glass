@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { upload, handleUploadError } from '../middleware/upload';
 import { uploadRateLimiter, progressiveDelay } from '../middleware/rateLimit';
+import { verifyOwnership } from '../middleware/ownership';
 import photoSubmissionService from '../../services/PhotoSubmissionService';
 import uploadQueueService from '../../services/UploadQueueService';
 import logger from '../../utils/logger';
@@ -387,6 +388,131 @@ router.get('/manual-assignment/needed', async (req: Request, res: Response) => {
     res.status(500).json({
       error: 'Internal server error',
       message: 'Failed to get submissions needing manual assignment',
+    });
+  }
+});
+
+/**
+ * PATCH /submissions/:id
+ * Update a photo submission (only editable fields: window_id, metadata)
+ * Requires ownership verification
+ */
+router.patch('/:id', verifyOwnership, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { window_id, metadata } = req.body;
+
+    // Build updates object (only include provided fields)
+    const updates: {
+      window_id?: string | null;
+      metadata?: Record<string, any>;
+    } = {};
+
+    if (window_id !== undefined) {
+      updates.window_id = window_id === null || window_id === '' ? null : window_id;
+    }
+
+    if (metadata !== undefined) {
+      // Parse metadata if it's a string
+      updates.metadata =
+        typeof metadata === 'string' ? JSON.parse(metadata) : metadata;
+    }
+
+    // Validate that at least one field is being updated
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({
+        error: 'Bad request',
+        message: 'At least one field (window_id or metadata) must be provided',
+      });
+    }
+
+    // Update submission
+    const updatedSubmission = await photoSubmissionService.updateSubmission(id, updates);
+
+    res.json({
+      success: true,
+      data: updatedSubmission,
+      message: 'Submission updated successfully',
+    });
+  } catch (error: any) {
+    logger.error('Error updating submission', {
+      error,
+      submissionId: req.params.id,
+      body: req.body,
+    });
+
+    // Handle known errors with specific status codes
+    if (error.message.includes('not found')) {
+      return res.status(404).json({
+        error: 'Not found',
+        message: error.message,
+      });
+    }
+
+    if (error.message.includes('deleted')) {
+      return res.status(410).json({
+        error: 'Gone',
+        message: error.message,
+      });
+    }
+
+    if (
+      error.message.includes('does not belong') ||
+      error.message.includes('belong to')
+    ) {
+      return res.status(400).json({
+        error: 'Invalid update',
+        message: error.message,
+      });
+    }
+
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'Failed to update submission',
+    });
+  }
+});
+
+/**
+ * DELETE /submissions/:id
+ * Soft delete a photo submission
+ * Requires ownership verification
+ */
+router.delete('/:id', verifyOwnership, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const result = await photoSubmissionService.softDeleteSubmission(id);
+
+    res.json({
+      success: true,
+      data: result,
+      message: 'Submission deleted successfully',
+    });
+  } catch (error: any) {
+    logger.error('Error deleting submission', {
+      error,
+      submissionId: req.params.id,
+    });
+
+    // Handle known errors with specific status codes
+    if (error.message.includes('not found')) {
+      return res.status(404).json({
+        error: 'Not found',
+        message: error.message,
+      });
+    }
+
+    if (error.message.includes('already deleted')) {
+      return res.status(410).json({
+        error: 'Gone',
+        message: error.message,
+      });
+    }
+
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'Failed to delete submission',
     });
   }
 });

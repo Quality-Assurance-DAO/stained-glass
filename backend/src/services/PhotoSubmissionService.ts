@@ -5,6 +5,7 @@ import { calculateImageHash } from '../utils/imageHash';
 import churchService from './ChurchService';
 import { processAIAnalysis } from '../jobs/aiAnalysisProcessor';
 import aiService from './AIService';
+import userService from './UserService';
 
 export interface PhotoSubmissionFilters {
   windowId?: string;
@@ -278,14 +279,9 @@ export class PhotoSubmissionService {
         },
       });
 
-      // Update user contribution count
-      await prisma.user.update({
-        where: { app_id: userId },
-        data: {
-          contribution_count: {
-            increment: 1,
-          },
-        },
+      // Update user contribution stats (async, don't wait)
+      userService.updateContributionStats(userId).catch((error) => {
+        logger.error('Failed to update user contribution stats', { error, userId });
       });
 
       logger.info('Photo submission created', {
@@ -625,6 +621,240 @@ export class PhotoSubmissionService {
         submissionId,
       });
       return false;
+    }
+  }
+
+  /**
+   * Update a photo submission (only editable fields: window_id, metadata)
+   * Immutable fields: image, location, timestamp, blockchain references, user_id
+   */
+  async updateSubmission(
+    submissionId: string,
+    updates: {
+      window_id?: string | null;
+      metadata?: Record<string, any>;
+    }
+  ) {
+    try {
+      // Get existing submission
+      const existingSubmission = await prisma.photoSubmission.findUnique({
+        where: { id: submissionId },
+        select: {
+          id: true,
+          user_id: true,
+          window_id: true,
+          metadata: true,
+          deleted_at: true,
+        },
+      });
+
+      if (!existingSubmission) {
+        throw new Error('Photo submission not found');
+      }
+
+      if (existingSubmission.deleted_at) {
+        throw new Error('Cannot update a deleted submission');
+      }
+
+      // Build update data (only editable fields)
+      const updateData: any = {};
+
+      if (updates.window_id !== undefined) {
+        // If window_id is provided, validate it
+        if (updates.window_id !== null) {
+          const window = await prisma.window.findUnique({
+            where: { id: updates.window_id },
+            include: {
+              church: true,
+            },
+          });
+
+          if (!window) {
+            throw new Error(`Window ${updates.window_id} not found`);
+          }
+
+          // Verify window belongs to the same church as the submission
+          const submission = await prisma.photoSubmission.findUnique({
+            where: { id: submissionId },
+            include: {
+              window: {
+                include: {
+                  church: true,
+                },
+              },
+            },
+          });
+
+          if (submission?.window?.church_id !== window.church_id) {
+            throw new Error(
+              `Window ${updates.window_id} does not belong to the same church as this submission`
+            );
+          }
+        }
+        updateData.window_id = updates.window_id;
+      }
+
+      if (updates.metadata !== undefined) {
+        // Merge with existing metadata
+        const existingMetadata = (existingSubmission.metadata as Record<string, any>) || {};
+        updateData.metadata = {
+          ...existingMetadata,
+          ...updates.metadata,
+        };
+      }
+
+      // Update submission
+      const updatedSubmission = await prisma.photoSubmission.update({
+        where: { id: submissionId },
+        data: updateData,
+        include: {
+          window: {
+            include: {
+              church: {
+                select: {
+                  id: true,
+                  name: true,
+                  county: true,
+                  town: true,
+                },
+              },
+            },
+          },
+          user: {
+            select: {
+              app_id: true,
+            },
+          },
+        },
+      });
+
+      logger.info('Photo submission updated', {
+        submissionId,
+        updates,
+        userId: existingSubmission.user_id,
+      });
+
+      // Create audit trail entry for edit (queue for Cardano)
+      try {
+        await prisma.auditTrail.create({
+          data: {
+            submission_id: submissionId,
+            action: 'edit',
+            metadata: {
+              updated_fields: Object.keys(updateData),
+              previous_values: {
+                window_id: existingSubmission.window_id,
+                metadata: existingSubmission.metadata,
+              },
+              new_values: {
+                window_id: updateData.window_id,
+                metadata: updateData.metadata,
+              },
+            },
+          },
+        });
+      } catch (auditError) {
+        logger.error('Failed to create audit trail entry for edit', {
+          error: auditError,
+          submissionId,
+        });
+        // Don't fail the update if audit trail fails
+      }
+
+      // Update user contribution stats (async)
+      userService.updateContributionStats(existingSubmission.user_id).catch((error) => {
+        logger.error('Failed to update user contribution stats after edit', {
+          error,
+          userId: existingSubmission.user_id,
+        });
+      });
+
+      // Convert Decimal to number
+      return {
+        ...updatedSubmission,
+        latitude: Number(updatedSubmission.latitude),
+        longitude: Number(updatedSubmission.longitude),
+      };
+    } catch (error: any) {
+      logger.error('Error updating photo submission', {
+        error,
+        submissionId,
+        updates,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Soft delete a photo submission
+   * Marks as deleted but preserves blockchain records
+   */
+  async softDeleteSubmission(submissionId: string) {
+    try {
+      const submission = await prisma.photoSubmission.findUnique({
+        where: { id: submissionId },
+        select: {
+          id: true,
+          user_id: true,
+          deleted_at: true,
+        },
+      });
+
+      if (!submission) {
+        throw new Error('Photo submission not found');
+      }
+
+      if (submission.deleted_at) {
+        throw new Error('Submission is already deleted');
+      }
+
+      // Soft delete
+      await prisma.photoSubmission.update({
+        where: { id: submissionId },
+        data: {
+          deleted_at: new Date(),
+        },
+      });
+
+      logger.info('Photo submission soft deleted', {
+        submissionId,
+        userId: submission.user_id,
+      });
+
+      // Create audit trail entry for delete (queue for Cardano)
+      try {
+        await prisma.auditTrail.create({
+          data: {
+            submission_id: submissionId,
+            action: 'delete',
+            metadata: {
+              deleted_at: new Date().toISOString(),
+            },
+          },
+        });
+      } catch (auditError) {
+        logger.error('Failed to create audit trail entry for delete', {
+          error: auditError,
+          submissionId,
+        });
+        // Don't fail the delete if audit trail fails
+      }
+
+      // Update user contribution stats (async)
+      userService.updateContributionStats(submission.user_id).catch((error) => {
+        logger.error('Failed to update user contribution stats after delete', {
+          error,
+          userId: submission.user_id,
+        });
+      });
+
+      return { success: true, message: 'Submission deleted successfully' };
+    } catch (error: any) {
+      logger.error('Error soft deleting photo submission', {
+        error,
+        submissionId,
+      });
+      throw error;
     }
   }
 }

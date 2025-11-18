@@ -5,6 +5,8 @@ import { ChurchSearchPage } from './pages/ChurchSearchPage';
 import { ChurchDetailPage } from './pages/ChurchDetailPage';
 import { PhotoUploadPage } from './pages/PhotoUploadPage';
 import { PhotoAssignmentPage } from './pages/PhotoAssignmentPage';
+import { UserProfilePage } from './pages/UserProfilePage';
+import { EditSubmissionPage } from './pages/EditSubmissionPage';
 
 function App() {
   return (
@@ -15,6 +17,8 @@ function App() {
           <Route path="/churches/:churchId" element={<ChurchDetailPage />} />
           <Route path="/churches/:churchId/upload" element={<PhotoUploadPage />} />
           <Route path="/churches/:churchId/submissions/:submissionId/assign" element={<PhotoAssignmentPage />} />
+          <Route path="/profile" element={<UserProfilePage />} />
+          <Route path="/submissions/:submissionId/edit" element={<EditSubmissionPage />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

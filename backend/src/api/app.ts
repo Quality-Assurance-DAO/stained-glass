@@ -20,12 +20,13 @@ import churchesRouter from './routes/churches';
 import windowsRouter from './routes/windows';
 import churchWindowsRouter from './routes/churchWindows';
 import submissionsRouter from './routes/submissions';
+import usersRouter from './routes/users';
 
 app.use('/v1/churches', churchesRouter);
 app.use('/v1', churchWindowsRouter); // For /churches/:churchId/windows
 app.use('/v1/windows', windowsRouter);
 app.use('/v1/submissions', submissionsRouter);
-// app.use('/v1/users', usersRouter);
+app.use('/v1/users', usersRouter);
 // app.use('/v1/blockchain', blockchainRouter);
 
 // 404 handler
