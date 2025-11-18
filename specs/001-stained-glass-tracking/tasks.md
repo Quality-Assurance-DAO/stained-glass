@@ -211,21 +211,21 @@ Every task follows this strict format:
 
 ### Implementation for User Story 3
 
-- [ ] T092 [US3] Create floor plan interactive component with clickable window areas in frontend/src/components/FloorPlan.tsx
-- [ ] T093 [US3] Implement window selection handler in floor plan component in frontend/src/components/FloorPlan.tsx
-- [ ] T094 [US3] Create photo assignment UI component in frontend/src/pages/PhotoAssignmentPage.tsx
-- [ ] T095 [US3] Implement POST /submissions/{submissionId}/assign endpoint in backend/src/api/routes/submissions.ts
-- [ ] T096 [US3] Add window assignment logic to PhotoSubmissionService in backend/src/services/PhotoSubmissionService.ts
-- [ ] T097 [US3] Update PhotoSubmission model to handle window assignment (window_id field already exists) in backend/prisma/schema.prisma
-- [ ] T098 [US3] Create database migration for window assignment updates if needed in backend/prisma/migrations/
-- [ ] T099 [US3] Implement API service method for photo assignment in frontend/src/services/api/submissions.ts
-- [ ] T100 [US3] Add React Query mutation for photo assignment in frontend/src/hooks/usePhotoAssignment.ts
-- [ ] T101 [US3] Update WindowList component to show assigned photos organized by window in frontend/src/components/WindowList.tsx
-- [ ] T102 [US3] Add validation to ensure window belongs to correct church in backend/src/services/PhotoSubmissionService.ts
-- [ ] T103 [US3] Update PhotoGallery component to filter photos by window assignment in frontend/src/components/PhotoGallery.tsx
-- [ ] T104 [US3] Add alternative window assignment methods (text description, manual coordinates) in frontend/src/components/WindowAssignment.tsx
-- [ ] T105 [US3] Add floor plan mismatch reporting UI in frontend/src/components/FloorPlanMismatchReport.tsx
-- [ ] T106 [US3] Create floor plan mismatch reporting endpoint in backend/src/api/routes/churches.ts
+- [X] T092 [US3] Create floor plan interactive component with clickable window areas in frontend/src/components/FloorPlan.tsx
+- [X] T093 [US3] Implement window selection handler in floor plan component in frontend/src/components/FloorPlan.tsx
+- [X] T094 [US3] Create photo assignment UI component in frontend/src/pages/PhotoAssignmentPage.tsx
+- [X] T095 [US3] Implement POST /submissions/{submissionId}/assign endpoint in backend/src/api/routes/submissions.ts
+- [X] T096 [US3] Add window assignment logic to PhotoSubmissionService in backend/src/services/PhotoSubmissionService.ts
+- [X] T097 [US3] Update PhotoSubmission model to handle window assignment (window_id field already exists) in backend/prisma/schema.prisma
+- [X] T098 [US3] Create database migration for window assignment updates if needed in backend/prisma/migrations/
+- [X] T099 [US3] Implement API service method for photo assignment in frontend/src/services/api/submissions.ts
+- [X] T100 [US3] Add React Query mutation for photo assignment in frontend/src/hooks/usePhotoAssignment.ts
+- [X] T101 [US3] Update WindowList component to show assigned photos organized by window in frontend/src/components/WindowList.tsx
+- [X] T102 [US3] Add validation to ensure window belongs to correct church in backend/src/services/PhotoSubmissionService.ts
+- [X] T103 [US3] Update PhotoGallery component to filter photos by window assignment in frontend/src/components/PhotoGallery.tsx
+- [X] T104 [US3] Add alternative window assignment methods (text description, manual coordinates) in frontend/src/components/WindowAssignment.tsx
+- [X] T105 [US3] Add floor plan mismatch reporting UI in frontend/src/components/FloorPlanMismatchReport.tsx
+- [X] T106 [US3] Create floor plan mismatch reporting endpoint in backend/src/api/routes/churches.ts
 
 **Checkpoint**: At this point, User Story 3 should be fully functional. Users can assign photos to windows using the floor plan and view organized submissions.
 
