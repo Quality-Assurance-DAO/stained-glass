@@ -6,6 +6,8 @@ import { usePhotoAssignment } from '../hooks/usePhotoAssignment';
 import { FloorPlan } from '../components/FloorPlan';
 import { WindowAssignment } from '../components/WindowAssignment';
 import { FloorPlanMismatchReport } from '../components/FloorPlanMismatchReport';
+import AISuggestions from '../components/AISuggestions';
+import AIAnalysisStatus from '../components/AIAnalysisStatus';
 import { getPhotoSubmission } from '../services/api/submissions';
 
 export function PhotoAssignmentPage() {
@@ -121,11 +123,29 @@ export function PhotoAssignmentPage() {
             {church.name}, {church.town}, {church.county}
           </p>
           {submission && (
-            <p className="text-sm text-gray-500 mt-1">
-              Submission ID: {submission.id.slice(0, 8)}...
-            </p>
+            <>
+              <p className="text-sm text-gray-500 mt-1">
+                Submission ID: {submission.id.slice(0, 8)}...
+              </p>
+              <div className="mt-4">
+                <AIAnalysisStatus submissionId={submission.id} />
+              </div>
+            </>
           )}
         </div>
+
+        {/* AI Suggestions */}
+        {submissionId && churchId && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <AISuggestions
+              submissionId={submissionId}
+              churchId={churchId}
+              onAssignmentComplete={() => {
+                navigate(`/churches/${churchId}`);
+              }}
+            />
+          </div>
+        )}
 
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">

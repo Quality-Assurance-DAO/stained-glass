@@ -3,6 +3,8 @@ import logger from '../utils/logger';
 import locationService from './LocationService';
 import { calculateImageHash } from '../utils/imageHash';
 import churchService from './ChurchService';
+import { processAIAnalysis } from '../jobs/aiAnalysisProcessor';
+import aiService from './AIService';
 
 export interface PhotoSubmissionFilters {
   windowId?: string;
@@ -293,6 +295,20 @@ export class PhotoSubmissionService {
         imageHash,
       });
 
+      // Trigger AI analysis asynchronously (don't wait for it)
+      processAIAnalysis({
+        submissionId: submission.id,
+        imageBuffer,
+        imageHash,
+        churchId,
+      }).catch((error) => {
+        logger.error('Failed to trigger AI analysis', {
+          error,
+          submissionId: submission.id,
+        });
+        // Don't throw - submission is already created
+      });
+
       // Convert Decimal to number
       return {
         ...submission,
@@ -445,6 +461,170 @@ export class PhotoSubmissionService {
         windowId,
       });
       throw error;
+    }
+  }
+
+  /**
+   * Get primary photo for a window (best quality photo)
+   * Uses AI quality scores if available, falls back to other heuristics
+   */
+  async getPrimaryPhotoForWindow(windowId: string) {
+    try {
+      const submissions = await this.getSubmissionsByWindowId(windowId);
+
+      if (submissions.length === 0) {
+        return null;
+      }
+
+      // Filter out deleted submissions
+      const validSubmissions = submissions.filter((s) => !s.deleted_at);
+
+      if (validSubmissions.length === 0) {
+        return null;
+      }
+
+      // Find submission with highest AI quality score
+      let primarySubmission = validSubmissions[0];
+      let highestScore = 0;
+
+      for (const submission of validSubmissions) {
+        const aiClassification = submission.ai_classification as any;
+        if (aiClassification?.quality?.score) {
+          const score = aiClassification.quality.score;
+          if (score > highestScore) {
+            highestScore = score;
+            primarySubmission = submission;
+          }
+        }
+      }
+
+      // If no AI scores available, use first submission (or could use other heuristics)
+      return primarySubmission;
+    } catch (error: any) {
+      logger.error('Error getting primary photo for window', { error, windowId });
+      throw error;
+    }
+  }
+
+  /**
+   * Get filtered submissions (exclude low-quality/irrelevant ones)
+   */
+  async getFilteredSubmissions(filters: PhotoSubmissionFilters = {}) {
+    try {
+      const allSubmissions = await this.getSubmissions(filters);
+
+      // Filter out submissions that AI marked as should be filtered
+      return allSubmissions.filter((submission) => {
+        const aiClassification = submission.ai_classification as any;
+        if (aiClassification?.shouldFilter === true) {
+          return false;
+        }
+        return true;
+      });
+    } catch (error: any) {
+      logger.error('Error getting filtered submissions', { error, filters });
+      throw error;
+    }
+  }
+
+  /**
+   * Get submissions flagged for manual assignment (AI failed or uncertain)
+   */
+  async getSubmissionsNeedingManualAssignment(churchId?: string) {
+    try {
+      const filters: PhotoSubmissionFilters = churchId ? { churchId } : {};
+      const allSubmissions = await this.getSubmissions(filters);
+
+      return allSubmissions.filter((submission) => {
+        // No window assigned
+        if (!submission.window_id) {
+          return true;
+        }
+
+        // AI analysis failed or missing
+        const aiClassification = submission.ai_classification as any;
+        if (!aiClassification || aiClassification.error) {
+          return true;
+        }
+
+        // AI suggested a window but confidence is low
+        if (
+          aiClassification.windowIdentification?.suggestedWindowId &&
+          aiClassification.windowIdentification.confidence < 0.8
+        ) {
+          return true;
+        }
+
+        return false;
+      });
+    } catch (error: any) {
+      logger.error('Error getting submissions needing manual assignment', {
+        error,
+        churchId,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get AI-suggested window assignment for a submission
+   */
+  async getAISuggestedWindow(submissionId: string) {
+    try {
+      const submission = await this.getSubmissionById(submissionId);
+      if (!submission) {
+        return null;
+      }
+
+      const aiClassification = submission.ai_classification as any;
+      if (!aiClassification?.windowIdentification) {
+        return null;
+      }
+
+      return {
+        windowId: aiClassification.windowIdentification.suggestedWindowId,
+        confidence: aiClassification.windowIdentification.confidence,
+        reasoning: aiClassification.windowIdentification.reasoning,
+        locationDescription:
+          aiClassification.windowIdentification.locationDescription,
+      };
+    } catch (error: any) {
+      logger.error('Error getting AI suggested window', { error, submissionId });
+      throw error;
+    }
+  }
+
+  /**
+   * Check if submission needs manual review (filtered or low quality)
+   */
+  async needsManualReview(submissionId: string): Promise<boolean> {
+    try {
+      const submission = await this.getSubmissionById(submissionId);
+      if (!submission) {
+        return false;
+      }
+
+      const aiClassification = submission.ai_classification as any;
+      if (!aiClassification) {
+        return false; // No AI analysis yet
+      }
+
+      // Needs review if filtered or low quality
+      if (aiClassification.shouldFilter === true) {
+        return true;
+      }
+
+      if (aiClassification.quality?.score && aiClassification.quality.score < 50) {
+        return true;
+      }
+
+      return false;
+    } catch (error: any) {
+      logger.error('Error checking if submission needs manual review', {
+        error,
+        submissionId,
+      });
+      return false;
     }
   }
 }

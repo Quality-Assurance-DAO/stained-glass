@@ -16,6 +16,8 @@
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "seed": "tsx scripts/seed-test-data.ts",
+    "verify:openai": "tsx scripts/verify-openai.ts",
+    "test:ai": "tsx scripts/test-ai-service.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"

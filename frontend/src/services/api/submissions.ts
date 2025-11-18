@@ -98,3 +98,80 @@ export async function assignPhotoToWindow(
   return response.data;
 }
 
+export interface AIAnalysisResult {
+  status: 'pending' | 'completed' | 'failed';
+  message?: string;
+  error?: string;
+  timestamp?: string;
+  classification?: {
+    isStainedGlassWindow: boolean;
+    confidence: number;
+    reasoning?: string;
+  };
+  quality?: {
+    score: number;
+    isHighQuality: boolean;
+    issues: string[];
+    brightness?: 'too_dark' | 'too_bright' | 'good';
+    sharpness?: 'blurry' | 'slightly_blurry' | 'sharp';
+    framing?: 'poor' | 'good' | 'excellent';
+    reasoning?: string;
+  };
+  windowIdentification?: {
+    suggestedWindowId?: string;
+    confidence: number;
+    reasoning?: string;
+    locationDescription?: string;
+  };
+  shouldFilter?: boolean;
+  filterReason?: string;
+}
+
+export interface AISuggestion {
+  windowId: string;
+  confidence: number;
+  reasoning?: string;
+  locationDescription?: string;
+}
+
+/**
+ * Get AI analysis results for a submission
+ */
+export async function getAIAnalysis(
+  submissionId: string
+): Promise<{ success: boolean; data: AIAnalysisResult }> {
+  const response = await apiClient.get<{ success: boolean; data: AIAnalysisResult }>(
+    `/submissions/${submissionId}/ai-analysis`
+  );
+  return response.data;
+}
+
+/**
+ * Get AI-suggested window assignment for a submission
+ */
+export async function getAISuggestion(
+  submissionId: string
+): Promise<{ success: boolean; data: AISuggestion | null; message?: string }> {
+  const response = await apiClient.get<{
+    success: boolean;
+    data: AISuggestion | null;
+    message?: string;
+  }>(`/submissions/${submissionId}/ai-suggestion`);
+  return response.data;
+}
+
+/**
+ * Get submissions that need manual window assignment
+ */
+export async function getSubmissionsNeedingManualAssignment(
+  churchId?: string
+): Promise<{ success: boolean; data: PhotoSubmission[]; count: number }> {
+  const params = churchId ? { church_id: churchId } : {};
+  const response = await apiClient.get<{
+    success: boolean;
+    data: PhotoSubmission[];
+    count: number;
+  }>('/submissions/manual-assignment/needed', { params });
+  return response.data;
+}
+

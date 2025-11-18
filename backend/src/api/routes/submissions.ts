@@ -276,5 +276,120 @@ router.post('/:id/assign', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * GET /submissions/:id/ai-analysis
+ * Get AI analysis results for a submission
+ */
+router.get('/:id/ai-analysis', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const submission = await photoSubmissionService.getSubmissionById(id);
+
+    if (!submission) {
+      return res.status(404).json({
+        error: 'Not found',
+        message: 'Photo submission not found',
+      });
+    }
+
+    const aiClassification = submission.ai_classification as any;
+
+    if (!aiClassification) {
+      return res.json({
+        success: true,
+        data: {
+          status: 'pending',
+          message: 'AI analysis is still in progress',
+        },
+      });
+    }
+
+    if (aiClassification.error) {
+      return res.json({
+        success: true,
+        data: {
+          status: 'failed',
+          error: aiClassification.error,
+          timestamp: aiClassification.timestamp,
+        },
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        status: 'completed',
+        classification: aiClassification.classification,
+        quality: aiClassification.quality,
+        windowIdentification: aiClassification.windowIdentification,
+        shouldFilter: aiClassification.shouldFilter,
+        filterReason: aiClassification.filterReason,
+      },
+    });
+  } catch (error) {
+    logger.error('Error getting AI analysis', { error, id: req.params.id });
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'Failed to get AI analysis results',
+    });
+  }
+});
+
+/**
+ * GET /submissions/:id/ai-suggestion
+ * Get AI-suggested window assignment for a submission
+ */
+router.get('/:id/ai-suggestion', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const suggestion = await photoSubmissionService.getAISuggestedWindow(id);
+
+    if (!suggestion) {
+      return res.json({
+        success: true,
+        data: null,
+        message: 'No AI suggestion available for this submission',
+      });
+    }
+
+    res.json({
+      success: true,
+      data: suggestion,
+    });
+  } catch (error) {
+    logger.error('Error getting AI suggestion', { error, id: req.params.id });
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'Failed to get AI suggestion',
+    });
+  }
+});
+
+/**
+ * GET /submissions/manual-assignment/needed
+ * Get submissions that need manual window assignment
+ * Query params: church_id (optional)
+ */
+router.get('/manual-assignment/needed', async (req: Request, res: Response) => {
+  try {
+    const { church_id } = req.query;
+    const submissions = await photoSubmissionService.getSubmissionsNeedingManualAssignment(
+      church_id as string | undefined
+    );
+
+    res.json({
+      success: true,
+      data: submissions,
+      count: submissions.length,
+    });
+  } catch (error) {
+    logger.error('Error getting submissions needing manual assignment', { error });
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'Failed to get submissions needing manual assignment',
+    });
+  }
+});
+
 export default router;
 
