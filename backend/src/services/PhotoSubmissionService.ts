@@ -308,6 +308,145 @@ export class PhotoSubmissionService {
       throw error;
     }
   }
+
+  /**
+   * Assign a photo submission to a window
+   */
+  async assignToWindow(submissionId: string, windowId: string) {
+    try {
+      // Get the submission
+      const submission = await prisma.photoSubmission.findFirst({
+        where: {
+          id: submissionId,
+          deleted_at: null,
+        },
+        include: {
+          window: {
+            include: {
+              church: true,
+            },
+          },
+        },
+      });
+
+      if (!submission) {
+        throw new Error(`Photo submission with ID ${submissionId} not found`);
+      }
+
+      // Get the window and verify it exists
+      const window = await prisma.window.findUnique({
+        where: { id: windowId },
+        include: {
+          church: true,
+        },
+      });
+
+      if (!window) {
+        throw new Error(`Window with ID ${windowId} not found`);
+      }
+
+      // Validate that the window belongs to the correct church
+      // If submission already has a window assigned, verify the new window belongs to the same church
+      if (submission.window_id && submission.window) {
+        const existingChurchId = submission.window.church_id;
+        if (window.church_id !== existingChurchId) {
+          throw new Error(
+            `Window ${windowId} does not belong to the same church as the submission's current window`
+          );
+        }
+      } else {
+        // If submission doesn't have a window yet, find the church by matching location
+        // Find churches within 50m of the submission location
+        const submissionLat = Number(submission.latitude);
+        const submissionLon = Number(submission.longitude);
+        
+        const nearbyChurches = await prisma.church.findMany({
+          where: {
+            latitude: {
+              gte: submissionLat - 0.0005, // ~50m latitude
+              lte: submissionLat + 0.0005,
+            },
+            longitude: {
+              gte: submissionLon - 0.0005, // ~50m longitude
+              lte: submissionLon + 0.0005,
+            },
+          },
+        });
+
+        // Verify location matches using haversine distance
+        const matchingChurch = nearbyChurches.find((church) => {
+          const distance = locationService.verifyLocation(
+            submissionLat,
+            submissionLon,
+            Number(church.latitude),
+            Number(church.longitude),
+            false
+          );
+          return distance.isValid;
+        });
+
+        if (!matchingChurch) {
+          throw new Error(
+            `Cannot determine church for submission. No church found within 50m of submission location.`
+          );
+        }
+
+        // Verify the window belongs to the matching church
+        if (window.church_id !== matchingChurch.id) {
+          throw new Error(
+            `Window ${windowId} does not belong to the church at this location (${matchingChurch.name})`
+          );
+        }
+      }
+      
+      // Update the submission
+      const updatedSubmission = await prisma.photoSubmission.update({
+        where: { id: submissionId },
+        data: {
+          window_id: windowId,
+        },
+        include: {
+          window: {
+            include: {
+              church: {
+                select: {
+                  id: true,
+                  name: true,
+                  county: true,
+                  town: true,
+                },
+              },
+            },
+          },
+          user: {
+            select: {
+              app_id: true,
+            },
+          },
+        },
+      });
+
+      logger.info('Photo submission assigned to window', {
+        submissionId,
+        windowId,
+        churchId: window.church_id,
+      });
+
+      // Convert Decimal to number
+      return {
+        ...updatedSubmission,
+        latitude: Number(updatedSubmission.latitude),
+        longitude: Number(updatedSubmission.longitude),
+      };
+    } catch (error: any) {
+      logger.error('Error assigning submission to window', {
+        error,
+        submissionId,
+        windowId,
+      });
+      throw error;
+    }
+  }
 }
 
 export default new PhotoSubmissionService();

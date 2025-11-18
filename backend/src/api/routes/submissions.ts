@@ -225,5 +225,56 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * POST /submissions/:id/assign
+ * Assign a photo submission to a window
+ */
+router.post('/:id/assign', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { window_id } = req.body;
+
+    if (!window_id) {
+      return res.status(400).json({
+        error: 'Missing required field',
+        message: 'window_id is required',
+      });
+    }
+
+    const submission = await photoSubmissionService.assignToWindow(id, window_id);
+
+    res.json({
+      success: true,
+      data: submission,
+    });
+  } catch (error: any) {
+    logger.error('Error assigning submission to window', {
+      error,
+      submissionId: req.params.id,
+      windowId: req.body.window_id,
+    });
+
+    // Handle known errors with specific status codes
+    if (error.message.includes('not found')) {
+      return res.status(404).json({
+        error: 'Not found',
+        message: error.message,
+      });
+    }
+
+    if (error.message.includes('does not belong') || error.message.includes('belong to')) {
+      return res.status(400).json({
+        error: 'Invalid assignment',
+        message: error.message,
+      });
+    }
+
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'Failed to assign submission to window',
+    });
+  }
+});
+
 export default router;
 

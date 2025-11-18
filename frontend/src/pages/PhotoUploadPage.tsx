@@ -32,11 +32,12 @@ export function PhotoUploadPage() {
   } = useChurchDetails(churchId || null);
 
   const uploadMutation = usePhotoUpload({
-    onSuccess: () => {
+    onSuccess: (data) => {
       setUploadStatus('success');
       setStep('complete');
+      // Redirect to assignment page after upload
       setTimeout(() => {
-        navigate(`/churches/${churchId}`);
+        navigate(`/churches/${churchId}/submissions/${data.data.id}/assign`);
       }, 2000);
     },
     onError: (error) => {

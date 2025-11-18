@@ -21,20 +21,20 @@ async function seedTestData() {
         town: "York",
         latitude: 53.9600,
         longitude: -1.0800,
-        floor_plan_url: "https://via.placeholder.com/800x600?text=St+Mary%27s+Floor+Plan",
+        floor_plan_url: "/floorplans/st-marys.svg",
         windows: {
           create: [
             {
               location_description: "North Window",
-              coordinates_on_plan: { x: 100, y: 200 },
+              coordinates_on_plan: { x: 80, y: 200, width: 30, height: 80 },
             },
             {
               location_description: "South Window",
-              coordinates_on_plan: { x: 100, y: 400 },
+              coordinates_on_plan: { x: 80, y: 400, width: 30, height: 80 },
             },
             {
               location_description: "East Window",
-              coordinates_on_plan: { x: 500, y: 300 },
+              coordinates_on_plan: { x: 500, y: 50, width: 80, height: 30 },
             },
           ],
         },
@@ -48,14 +48,16 @@ async function seedTestData() {
         town: "Leeds",
         latitude: 53.8008,
         longitude: -1.5491,
-        floor_plan_url: null, // Test church without floor plan
+        floor_plan_url: "/floorplans/st-peters.svg",
         windows: {
           create: [
             {
               location_description: "Rose Window",
+              coordinates_on_plan: { x: 360, y: 80, width: 80, height: 80 },
             },
             {
               location_description: "Chancel Window",
+              coordinates_on_plan: { x: 580, y: 250, width: 30, height: 100 },
             },
           ],
         },
@@ -69,12 +71,12 @@ async function seedTestData() {
         town: "Canterbury",
         latitude: 51.2794,
         longitude: 1.0800,
-        floor_plan_url: "https://via.placeholder.com/800x600?text=All+Saints+Floor+Plan",
+        floor_plan_url: "/floorplans/all-saints.svg",
         windows: {
           create: [
             {
               location_description: "West Window",
-              coordinates_on_plan: { x: 50, y: 100 },
+              coordinates_on_plan: { x: 50, y: 100, width: 30, height: 80 },
             },
           ],
         },

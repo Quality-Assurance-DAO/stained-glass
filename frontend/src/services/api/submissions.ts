@@ -84,3 +84,17 @@ export async function getPhotoSubmission(
   return response.data.data;
 }
 
+/**
+ * Assign a photo submission to a window
+ */
+export async function assignPhotoToWindow(
+  submissionId: string,
+  windowId: string
+): Promise<{ success: boolean; data: PhotoSubmission }> {
+  const response = await apiClient.post<{ success: boolean; data: PhotoSubmission }>(
+    `/submissions/${submissionId}/assign`,
+    { window_id: windowId }
+  );
+  return response.data;
+}
+
