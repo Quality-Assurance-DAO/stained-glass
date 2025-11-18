@@ -74,3 +74,5 @@ curl "http://localhost:3000/api/churches/{id}/windows"
 
 For comprehensive testing, see: [phase4-testing-guide.md](./phase4-testing-guide.md)
 
+
+

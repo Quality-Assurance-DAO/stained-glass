@@ -35,3 +35,5 @@ router.get('/churches/:churchId/windows', async (req: Request, res: Response) =>
 
 export default router;
 
+
+

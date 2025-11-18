@@ -74,3 +74,5 @@ export function PhotoGallery({ submissions, onPhotoClick }: PhotoGalleryProps) {
   );
 }
 
+
+

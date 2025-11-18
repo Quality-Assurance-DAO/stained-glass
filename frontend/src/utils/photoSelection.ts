@@ -31,3 +31,5 @@ export function selectPrimaryPhoto(submissions: WindowSubmission[]): WindowSubmi
   return sorted[0];
 }
 
+
+
