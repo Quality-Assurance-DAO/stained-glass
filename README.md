@@ -60,6 +60,132 @@ If you notice incorrect information or misassigned photos, use the mismatch repo
 
 ![Report Mismatch](Assets/images/screenshots/Report-Mismatch.png)
 
+## OpenAI Integration
+
+The application uses OpenAI's GPT-4o Vision API to automatically analyze uploaded photos of stained glass windows. This AI-powered analysis runs asynchronously after photo upload and provides three main types of analysis.
+
+### How It Works
+
+When you upload a photo, the application:
+
+1. **Sends the image** to OpenAI's GPT-4o Vision API for analysis
+2. **Performs three parallel analyses**:
+   - Image classification (is it a stained glass window?)
+   - Quality assessment (how good is the photo?)
+   - Window identification (which specific window does it show?)
+3. **Stores the results** in the database for future reference
+4. **Uses cached results** for duplicate images (identified by image hash)
+
+### Expected Outputs
+
+#### 1. Image Classification
+
+The AI determines whether the uploaded image is actually a stained glass window.
+
+**Output includes:**
+- `isStainedGlassWindow`: Boolean indicating if the image shows a stained glass window
+- `confidence`: Number between 0-1 indicating confidence level
+- `reasoning`: Brief explanation of the classification decision
+
+**What it filters out:**
+- Regular windows (non-stained glass)
+- Doors or other architectural features
+- Paintings or artwork
+- Photographs of windows (rather than actual windows)
+- Other non-stained-glass objects
+
+**Example output:**
+```json
+{
+  "isStainedGlassWindow": true,
+  "confidence": 0.95,
+  "reasoning": "Image shows a clear stained glass window with colorful glass pieces, lead lines, and religious imagery typical of church windows."
+}
+```
+
+#### 2. Quality Assessment
+
+The AI evaluates the technical quality of the photo to help identify the best submissions.
+
+**Output includes:**
+- `score`: Overall quality score from 0-100
+- `isHighQuality`: Boolean (true if score ≥ 70)
+- `issues`: Array of specific quality problems (e.g., ["too dark", "blurry", "poor framing"])
+- `brightness`: One of "too_dark", "too_bright", or "good"
+- `sharpness`: One of "blurry", "slightly_blurry", or "sharp"
+- `framing`: One of "poor", "good", or "excellent"
+- `reasoning`: Brief explanation of the quality assessment
+
+**Example output:**
+```json
+{
+  "score": 85,
+  "isHighQuality": true,
+  "issues": [],
+  "brightness": "good",
+  "sharpness": "sharp",
+  "framing": "excellent",
+  "reasoning": "Well-lit, sharp focus, and excellent framing showing the full window."
+}
+```
+
+#### 3. Window Identification
+
+When a church has multiple windows registered, the AI attempts to identify which specific window the photo shows.
+
+**Output includes:**
+- `suggestedWindowId`: The ID of the most likely window (or null if uncertain)
+- `confidence`: Number between 0-1 indicating confidence level
+- `reasoning`: Brief explanation of the identification
+- `locationDescription`: Description of the window's position/location if helpful
+
+**Example output:**
+```json
+{
+  "suggestedWindowId": "win_123abc",
+  "confidence": 0.88,
+  "reasoning": "This appears to be the north-facing window based on the distinctive rose design pattern.",
+  "locationDescription": "North wall, east side"
+}
+```
+
+### Automatic Filtering
+
+Photos are automatically flagged for filtering if they meet any of these criteria:
+
+- **Not a stained glass window** (with confidence > 0.7)
+- **Very low quality** (score < 30)
+- **Multiple critical issues** (3 or more quality issues)
+
+Filtered photos are not deleted but are flagged for admin review. Users can still see their submissions, but they may be hidden from public view until reviewed.
+
+### Configuration
+
+The AI service requires an OpenAI API key to be configured:
+
+```env
+OPENAI_API_KEY=your_openai_api_key
+```
+
+If no API key is provided, the service gracefully falls back to default values:
+- All images are assumed to be valid stained glass windows
+- Quality scores default to 70 (acceptable)
+- No automatic filtering occurs
+
+### Performance & Caching
+
+- **Analysis runs asynchronously** after upload, so it doesn't block the upload process
+- **Results are cached** by image hash to avoid re-analyzing identical images
+- **Typical analysis time**: 5-30 seconds per image
+- **Cost**: Uses GPT-4o Vision API pricing (pay per request)
+
+### Privacy & Data Handling
+
+- Images are sent to OpenAI's API for analysis
+- OpenAI's data usage policies apply (check OpenAI's current policies)
+- Analysis results are stored in your database
+- Original images are stored on Arweave (blockchain storage)
+
 ## Prerequisites
 
 - **Node.js**: 20.x LTS or higher
