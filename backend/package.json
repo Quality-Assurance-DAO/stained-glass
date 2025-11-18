@@ -15,6 +15,7 @@
     "studio": "prisma studio",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
+    "seed": "tsx scripts/seed-test-data.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"

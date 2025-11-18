@@ -8,7 +8,9 @@ async function seedTestData() {
     const existingChurches = await prisma.church.count();
     if (existingChurches > 0) {
       console.log(`⚠️  Found ${existingChurches} existing churches in database.`);
+      console.log('   Skipping seed - data already exists.');
       console.log('   Run reset-db.sh first if you want to start fresh.\n');
+      return;
     }
 
     // Create test churches with windows

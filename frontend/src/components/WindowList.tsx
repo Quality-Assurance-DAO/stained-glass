@@ -21,6 +21,7 @@ export function WindowList({ windows, onWindowClick, onPhotoClick }: WindowListP
       {windows.map((window) => (
         <div
           key={window.id}
+          id={`window-${window.id}`}
           className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
         >
           <div className="flex items-start justify-between mb-4">

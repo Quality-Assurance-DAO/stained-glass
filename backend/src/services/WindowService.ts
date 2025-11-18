@@ -55,13 +55,14 @@ export class WindowService {
         },
       });
 
-      // Convert Decimal to number for JSON serialization
+      // Convert Decimal to number and Date to ISO string for JSON serialization
       return windows.map((window) => ({
         ...window,
         submissions: window.submissions.map((submission) => ({
           ...submission,
           latitude: Number(submission.latitude),
           longitude: Number(submission.longitude),
+          timestamp: submission.timestamp.toISOString(),
         })),
       }));
     } catch (error) {
@@ -101,13 +102,14 @@ export class WindowService {
         return null;
       }
 
-      // Convert Decimal to number
+      // Convert Decimal to number and Date to ISO string
       return {
         ...window,
         submissions: window.submissions.map((submission) => ({
           ...submission,
           latitude: Number(submission.latitude),
           longitude: Number(submission.longitude),
+          timestamp: submission.timestamp.toISOString(),
         })),
       };
     } catch (error) {

@@ -7,17 +7,22 @@ export function ChurchSearchPage() {
   const [county, setCounty] = useState('');
   const [town, setTown] = useState('');
   const [page, setPage] = useState(1);
+  const [searchParams, setSearchParams] = useState<{ county?: string; town?: string }>({});
 
   const { data, isLoading, error, isError } = useChurchSearch({
-    county: county || undefined,
-    town: town || undefined,
+    county: searchParams.county,
+    town: searchParams.town,
     page,
     limit: 20,
   });
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (county || town) {
+    if (county.trim() || town.trim()) {
+      setSearchParams({
+        county: county.trim() || undefined,
+        town: town.trim() || undefined,
+      });
       setPage(1);
     }
   };
@@ -124,7 +129,7 @@ export function ChurchSearchPage() {
               <div className="flex justify-center gap-2 mt-6">
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
+                  disabled={data.pagination.page === 1}
                   className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
                   Previous
@@ -134,7 +139,7 @@ export function ChurchSearchPage() {
                 </span>
                 <button
                   onClick={() => setPage((p) => Math.min(data.pagination.totalPages, p + 1))}
-                  disabled={page === data.pagination.totalPages}
+                  disabled={data.pagination.page === data.pagination.totalPages}
                   className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
                   Next
