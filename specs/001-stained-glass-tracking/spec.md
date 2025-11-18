@@ -17,6 +17,26 @@
 
 ## User Scenarios & Testing *(mandatory)*
 
+### User Story 0 - Developer Sets Up and Tests Local Environment (Priority: P0)
+
+A developer needs to set up the complete application stack on their local machine to test functionality before deploying to hosted services. They should be able to follow clear instructions to install dependencies, configure services, and start all required components. They need to verify that core application features work correctly in the local environment, including interactions between frontend, backend, and external services.
+
+**Why this priority**: This is the foundation for all development and testing work. Without a working local environment, developers cannot verify functionality or catch issues before deployment. Local testing enables rapid iteration and bug detection without the overhead of deploying to hosted services.
+
+**Independent Test**: Can be fully tested by a developer following setup instructions on a clean machine, successfully starting all application components (frontend, backend, database) without errors, and executing core user workflows to verify expected behavior.
+
+**Acceptance Scenarios**:
+
+1. **Given** a developer has a clean development machine, **When** they follow the setup instructions, **Then** they can install all required dependencies and tools
+2. **Given** all dependencies are installed, **When** they configure environment variables, **Then** the application connects to local services correctly
+3. **Given** configuration is complete, **When** they start the development servers, **Then** all components (frontend, backend, database) run successfully
+4. **Given** the application is running locally, **When** they access the frontend URL, **Then** they can interact with the application and see expected functionality
+5. **Given** the application is running locally, **When** a developer performs core user actions, **Then** all features respond correctly
+6. **Given** external service integrations are configured, **When** a developer tests blockchain and storage features, **Then** they can verify functionality using test networks or mock services
+7. **Given** a developer wants to reset their environment, **When** they run reset commands, **Then** the database is cleared and application state is reset
+
+---
+
 ### User Story 1 - Search and View Churches and Windows (Priority: P1)
 
 A user opens the app and wants to find a church and see what stained glass windows have been documented. They search by county and town, select a church, and view an orienting visual (floor plan or spatial overlay) showing the church layout. The app displays all existing window submissions for that church, organized by window location.
@@ -141,6 +161,11 @@ A user wants to verify the immutability and provenance of window submissions. Th
 - How does the system handle duplicate submissions of the same photo?
 - What happens when a user uploads photos for a church that doesn't exist in the database?
 - How does the system handle floor plans that don't match the actual church layout?
+- What happens when required dependencies are missing or incompatible versions are installed?
+- How does the system handle port conflicts when multiple developers run services on the same machine?
+- How does the system handle database connection failures during startup?
+- What happens when environment variables are missing or invalid?
+- How does the system handle file permission issues for local storage or wallet files?
 
 ## Requirements *(mandatory)*
 
@@ -174,6 +199,18 @@ A user wants to verify the immutability and provenance of window submissions. Th
 - **FR-023**: System MUST provide an interface for users to view Cardano audit trail associated with each window and upload
 - **FR-024**: System MUST function as a cross-platform, install-free web app
 - **FR-025**: System MUST continue allowing additional crowdsourced uploads even when windows have already been photographed
+- **FR-029**: System MUST provide clear, step-by-step setup instructions for installing all required dependencies for local development
+- **FR-030**: System MUST support configuration via environment variables for all service endpoints, API keys, and connection strings
+- **FR-031**: System MUST provide commands or scripts to start all required services (frontend, backend, database) with a single command or minimal steps
+- **FR-032**: System MUST validate that all required dependencies and services are available before starting the application
+- **FR-033**: System MUST provide clear error messages when setup or startup fails, indicating what is missing or misconfigured
+- **FR-034**: System MUST support running the application with test/mock versions of external services (Arweave, Cardano) for local development
+- **FR-035**: System MUST provide database migration scripts or commands to initialize the local database schema
+- **FR-036**: System MUST provide commands or scripts to reset the local environment to a clean state
+- **FR-037**: System MUST support hot-reload or auto-restart capabilities for frontend and backend during development
+- **FR-038**: System MUST provide logging output that helps developers diagnose issues during local development
+- **FR-039**: System MUST support running frontend and backend on different ports to avoid conflicts
+- **FR-040**: System MUST provide example environment configuration files (.env.example) with all required variables documented
 
 ### Key Entities
 
@@ -198,6 +235,14 @@ A user wants to verify the immutability and provenance of window submissions. Th
 - **SC-008**: Users can view Arweave records and Cardano audit trails for any submission in under 3 seconds
 - **SC-009**: The app functions correctly across all major web browsers and mobile devices without requiring installation
 - **SC-010**: Users can edit or delete their own submissions within 10 seconds of accessing the submission details
+- **SC-011**: A developer with standard development tools installed can complete the full local setup process in under 30 minutes
+- **SC-012**: Setup instructions enable 95% of developers to successfully start the application on their first attempt without external help
+- **SC-013**: All core application features can be tested locally without requiring access to production or hosted services
+- **SC-014**: Application startup time is under 10 seconds after all dependencies are installed and configured
+- **SC-015**: Error messages clearly identify the specific issue (missing dependency, configuration error, port conflict) in 100% of common failure scenarios
+- **SC-016**: Developers can reset their local environment to a clean state in under 2 minutes
+- **SC-017**: Hot-reload functionality updates frontend changes visible in the browser within 2 seconds of file save
+- **SC-018**: Backend API changes are reflected in running services within 5 seconds of file save (with auto-restart)
 
 ## Assumptions
 
@@ -209,3 +254,11 @@ A user wants to verify the immutability and provenance of window submissions. Th
 - The app will support common image formats (JPEG, PNG) from device cameras
 - Anonymous app IDs are generated client-side and stored locally, with server-side association for contribution tracking
 - Users understand that deleting submissions removes them from the active collection but blockchain records remain immutable (Arweave and Cardano records cannot be deleted)
+- Developers have access to a standard development machine (macOS, Linux, or Windows) with administrative privileges
+- Developers have basic familiarity with command-line tools and package managers
+- Internet connectivity is available for downloading dependencies and accessing test networks
+- Local machine has sufficient resources (RAM, disk space) to run all required services
+- Developers are working on a single machine (not distributed development environment)
+- PostgreSQL can be installed locally or accessed via a managed service (Supabase, Neon) for local development
+- External services (Arweave, Cardano) provide testnet or development environments that can be used locally
+- Development environment does not require production-grade security measures (local-only access is acceptable)
