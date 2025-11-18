@@ -3,11 +3,12 @@ import { PhotoGallery } from './PhotoGallery';
 
 interface WindowListProps {
   windows: Window[];
+  selectedWindowId?: string | null;
   onWindowClick?: (windowId: string) => void;
   onPhotoClick?: (windowId: string, submissionId: string) => void;
 }
 
-export function WindowList({ windows, onWindowClick, onPhotoClick }: WindowListProps) {
+export function WindowList({ windows, selectedWindowId, onWindowClick, onPhotoClick }: WindowListProps) {
   if (windows.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -18,11 +19,17 @@ export function WindowList({ windows, onWindowClick, onPhotoClick }: WindowListP
 
   return (
     <div className="space-y-8">
-      {windows.map((window) => (
+      {windows.map((window) => {
+        const isSelected = selectedWindowId === window.id;
+        return (
         <div
           key={window.id}
           id={`window-${window.id}`}
-          className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+          className={`border rounded-lg p-6 hover:shadow-md transition-all ${
+            isSelected
+              ? 'border-blue-600 bg-blue-50 shadow-lg'
+              : 'border-gray-200'
+          }`}
         >
           <div className="flex items-start justify-between mb-4">
             <div>
@@ -52,7 +59,8 @@ export function WindowList({ windows, onWindowClick, onPhotoClick }: WindowListP
             />
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

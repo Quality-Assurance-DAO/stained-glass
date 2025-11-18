@@ -4,6 +4,8 @@ import { useChurchDetails } from '../hooks/useChurchDetails';
 import { useWindowsByChurch } from '../hooks/useWindows';
 import { usePhotoAssignment } from '../hooks/usePhotoAssignment';
 import { FloorPlan } from '../components/FloorPlan';
+import { WindowAssignment } from '../components/WindowAssignment';
+import { FloorPlanMismatchReport } from '../components/FloorPlanMismatchReport';
 import { getPhotoSubmission } from '../services/api/submissions';
 
 export function PhotoAssignmentPage() {
@@ -163,33 +165,42 @@ export function PhotoAssignmentPage() {
           )}
         </div>
 
-        {/* Alternative: Window list if no floor plan or as backup */}
+        {/* Alternative: Window assignment methods */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Or Select from List</h2>
-          <div className="space-y-2">
-            {windows.map((window) => (
-              <button
-                key={window.id}
-                onClick={() => setSelectedWindowId(window.id)}
-                className={`w-full text-left p-3 rounded-lg border-2 transition-colors ${
-                  selectedWindowId === window.id
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-gray-900">
-                    {window.location_description || `Window ${window.id.slice(0, 8)}`}
-                  </span>
-                  {(window.submissions?.length || 0) > 0 && (
-                    <span className="text-sm text-gray-500">
-                      {(window.submissions?.length || 0)} photo{(window.submissions?.length || 0) !== 1 ? 's' : ''}
-                    </span>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Select Window</h2>
+          <WindowAssignment
+            windows={windows}
+            selectedWindowId={selectedWindowId}
+            onWindowSelect={handleWindowSelect}
+            onTextDescriptionSubmit={(description) => {
+              // Find windows matching the description
+              const matchingWindow = windows.find(
+                (w) =>
+                  w.location_description &&
+                  w.location_description.toLowerCase().includes(description.toLowerCase())
+              );
+              if (matchingWindow) {
+                setSelectedWindowId(matchingWindow.id);
+              } else {
+                alert(`No window found matching "${description}". Please select from the list or use manual coordinates.`);
+              }
+            }}
+            onManualCoordinatesSubmit={(coords) => {
+              // Find the nearest window to the given coordinates
+              // For now, just show a message that this feature needs window coordinate data
+              alert('Manual coordinate assignment requires window coordinate data. Please select from the list or use text description.');
+            }}
+          />
+        </div>
+
+        {/* Floor plan mismatch reporting */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <FloorPlanMismatchReport
+            churchId={churchId || ''}
+            onReportSubmitted={() => {
+              // Optionally refresh data or show confirmation
+            }}
+          />
         </div>
 
         {/* Action buttons */}

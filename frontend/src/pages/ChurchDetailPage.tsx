@@ -1,12 +1,15 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { useChurchDetails } from '../hooks/useChurchDetails';
 import { useWindowsByChurch } from '../hooks/useWindows';
-import { FloorPlanViewer } from '../components/FloorPlanViewer';
+import { FloorPlan } from '../components/FloorPlan';
 import { WindowList } from '../components/WindowList';
+import { FloorPlanMismatchReport } from '../components/FloorPlanMismatchReport';
 
 export function ChurchDetailPage() {
   const { churchId } = useParams<{ churchId: string }>();
   const navigate = useNavigate();
+  const [selectedWindowId, setSelectedWindowId] = useState<string | null>(null);
 
   const {
     data: church,
@@ -84,22 +87,33 @@ export function ChurchDetailPage() {
           </div>
         </div>
 
-        {church.floor_plan_url && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Floor Plan</h2>
-            <FloorPlanViewer
-              floorPlanUrl={church.floor_plan_url}
-              windows={church.windows}
-              onWindowClick={(windowId) => {
-                // Scroll to window in list or navigate to window detail
-                const element = document.getElementById(`window-${windowId}`);
-                if (element) {
-                  element.scrollIntoView({ behavior: 'smooth' });
-                }
-              }}
-            />
-          </div>
-        )}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Floor Plan</h2>
+          <FloorPlan
+            floorPlanUrl={church.floor_plan_url}
+            windows={church.windows.map((w) => ({
+              id: w.id,
+              location_description: w.location_description,
+              coordinates_on_plan: w.coordinates_on_plan,
+              submissionCount: w.submissionCount,
+            }))}
+            selectedWindowId={selectedWindowId}
+            onWindowSelect={(windowId) => {
+              setSelectedWindowId(windowId);
+              // Scroll to window in list
+              const element = document.getElementById(`window-${windowId}`);
+              if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            }}
+          />
+          <FloorPlanMismatchReport
+            churchId={churchId || ''}
+            onReportSubmitted={() => {
+              // Optionally refresh data or show confirmation
+            }}
+          />
+        </div>
 
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Windows</h2>
@@ -121,9 +135,14 @@ export function ChurchDetailPage() {
           {windowsData && (
             <WindowList
               windows={windowsData.windows}
+              selectedWindowId={selectedWindowId}
               onWindowClick={(windowId) => {
-                // Could navigate to window detail page in future
-                console.log('Window clicked:', windowId);
+                setSelectedWindowId(windowId);
+                // Scroll to window in floor plan if needed
+                const element = document.getElementById(`window-${windowId}`);
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
               }}
               onPhotoClick={(windowId, submissionId) => {
                 // Could navigate to photo detail page in future
