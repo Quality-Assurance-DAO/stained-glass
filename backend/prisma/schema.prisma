@@ -1,0 +1,128 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Church {
+  id            String   @id @default(uuid())
+  name          String
+  county        String
+  town          String
+  latitude      Decimal  @db.Decimal(10, 8)
+  longitude     Decimal  @db.Decimal(11, 8)
+  floor_plan_url String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  windows Window[]
+
+  @@unique([name, county, town, latitude, longitude])
+  @@index([county, town])
+  @@index([name])
+  @@index([county, town, name])
+  @@map("churches")
+}
+
+model Window {
+  id                  String   @id @default(uuid())
+  church_id            String
+  location_description String?
+  coordinates_on_plan  Json?
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  church       Church           @relation(fields: [church_id], references: [id], onDelete: Cascade)
+  submissions  PhotoSubmission[]
+
+  @@index([church_id])
+  @@map("windows")
+}
+
+model User {
+  app_id            String   @id
+  contribution_count Int      @default(0)
+  quality_score     Decimal? @db.Decimal(5, 2)
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  submissions PhotoSubmission[]
+
+  @@map("users")
+}
+
+model PhotoSubmission {
+  id                String   @id @default(uuid())
+  window_id         String?
+  user_id           String
+  arweave_tx_id     String?
+  cardano_tx_id     String?
+  image_hash        String
+  timestamp         DateTime
+  latitude          Decimal  @db.Decimal(10, 8)
+  longitude         Decimal  @db.Decimal(11, 8)
+  location_verified Boolean  @default(true)
+  ai_classification Json?
+  metadata          Json?
+  deleted_at        DateTime?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  window Window? @relation(fields: [window_id], references: [id], onDelete: SetNull)
+  user   User    @relation(fields: [user_id], references: [app_id], onDelete: Cascade)
+
+  audit_trail AuditTrail[]
+  upload_queue UploadQueue[]
+
+  @@index([window_id])
+  @@index([user_id])
+  @@index([image_hash])
+  @@index([deleted_at])
+  @@index([window_id, image_hash, timestamp])
+  @@map("photo_submissions")
+}
+
+model AuditTrail {
+  id            String    @id @default(uuid())
+  submission_id String
+  action        String    // 'upload' | 'edit' | 'delete'
+  cardano_tx_id String?
+  metadata      Json?
+  queued_at     DateTime  @default(now())
+  confirmed_at DateTime?
+  retry_count   Int       @default(0)
+  created_at    DateTime  @default(now())
+
+  submission PhotoSubmission @relation(fields: [submission_id], references: [id], onDelete: Cascade)
+
+  @@index([submission_id])
+  @@index([cardano_tx_id])
+  @@index([confirmed_at])
+  @@map("audit_trail")
+}
+
+model UploadQueue {
+  id            String   @id @default(uuid())
+  submission_id String
+  queue_type    String   // 'arweave' | 'cardano'
+  payload       Json
+  status        String   // 'pending' | 'processing' | 'completed' | 'failed'
+  retry_count   Int      @default(0)
+  next_retry_at DateTime?
+  error_message String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  submission PhotoSubmission @relation(fields: [submission_id], references: [id], onDelete: Cascade)
+
+  @@index([status, next_retry_at])
+  @@index([submission_id])
+  @@map("upload_queue")
+}
+

@@ -50,14 +50,14 @@ Every task follows this strict format:
 **Dependencies**: None  
 **Parallel Opportunities**: All tasks marked [P] can run in parallel
 
-- [ ] T001 Create project structure per implementation plan (backend/ and frontend/ directories at repository root)
-- [ ] T002 [P] Initialize backend Node.js 20.x project with TypeScript 5.x, Express.js 4.x, and Prisma dependencies in backend/package.json
-- [ ] T003 [P] Initialize frontend React 18.x project with TypeScript 5.x, Vite 5.x, and Tailwind CSS 3.x dependencies in frontend/package.json
-- [ ] T004 [P] Configure ESLint and Prettier for backend in backend/.eslintrc.json and backend/.prettierrc
-- [ ] T005 [P] Configure ESLint and Prettier for frontend in frontend/.eslintrc.json and frontend/.prettierrc
-- [ ] T006 [P] Setup Git repository structure and .gitignore files at repository root
-- [ ] T007 [P] Create environment configuration templates (.env.example) for backend in backend/.env.example
-- [ ] T008 [P] Create environment configuration templates (.env.example) for frontend in frontend/.env.example
+- [X] T001 Create project structure per implementation plan (backend/ and frontend/ directories at repository root)
+- [X] T002 [P] Initialize backend Node.js 20.x project with TypeScript 5.x, Express.js 4.x, and Prisma dependencies in backend/package.json
+- [X] T003 [P] Initialize frontend React 18.x project with TypeScript 5.x, Vite 5.x, and Tailwind CSS 3.x dependencies in frontend/package.json
+- [X] T004 [P] Configure ESLint and Prettier for backend in backend/.eslintrc.json and backend/.prettierrc
+- [X] T005 [P] Configure ESLint and Prettier for frontend in frontend/.eslintrc.json and frontend/.prettierrc
+- [X] T006 [P] Setup Git repository structure and .gitignore files at repository root
+- [X] T007 [P] Create environment configuration templates (.env.example) for backend in backend/.env.example
+- [X] T008 [P] Create environment configuration templates (.env.example) for frontend in frontend/.env.example
 
 ---
 
@@ -68,19 +68,19 @@ Every task follows this strict format:
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete  
 **Parallel Opportunities**: All tasks marked [P] can run in parallel
 
-- [ ] T009 Setup PostgreSQL 15+ database connection and Prisma configuration in backend/src/config/database.ts
-- [ ] T010 Create Prisma schema file with base models in backend/prisma/schema.prisma
-- [ ] T011 [P] Setup Express.js API routing structure and middleware in backend/src/api/app.ts
-- [ ] T012 [P] Configure CORS middleware for frontend URL in backend/src/api/middleware/cors.ts
-- [ ] T013 [P] Implement error handling middleware in backend/src/api/middleware/errorHandler.ts
-- [ ] T014 [P] Setup logging infrastructure (Pino) in backend/src/utils/logger.ts
-- [ ] T015 [P] Create environment configuration management in backend/src/config/env.ts
-- [ ] T016 [P] Setup React Router 6.x routing structure in frontend/src/App.tsx
-- [ ] T017 [P] Configure React Query (TanStack Query) for API state management in frontend/src/lib/queryClient.ts
-- [ ] T018 [P] Create Axios API client configuration in frontend/src/services/api/client.ts
-- [ ] T019 [P] Setup IndexedDB utilities for offline storage in frontend/src/utils/indexedDB.ts
-- [ ] T020 Create base database models/entities that all stories depend on (Church, Window, User, PhotoSubmission) in backend/prisma/schema.prisma
-- [ ] T021 Create initial database migration in backend/prisma/migrations/
+- [X] T009 Setup PostgreSQL 15+ database connection and Prisma configuration in backend/src/config/database.ts
+- [X] T010 Create Prisma schema file with base models in backend/prisma/schema.prisma
+- [X] T011 [P] Setup Express.js API routing structure and middleware in backend/src/api/app.ts
+- [X] T012 [P] Configure CORS middleware for frontend URL in backend/src/api/middleware/cors.ts
+- [X] T013 [P] Implement error handling middleware in backend/src/api/middleware/errorHandler.ts
+- [X] T014 [P] Setup logging infrastructure (Pino) in backend/src/utils/logger.ts
+- [X] T015 [P] Create environment configuration management in backend/src/config/env.ts
+- [X] T016 [P] Setup React Router 6.x routing structure in frontend/src/App.tsx
+- [X] T017 [P] Configure React Query (TanStack Query) for API state management in frontend/src/lib/queryClient.ts
+- [X] T018 [P] Create Axios API client configuration in frontend/src/services/api/client.ts
+- [X] T019 [P] Setup IndexedDB utilities for offline storage in frontend/src/utils/indexedDB.ts
+- [X] T020 Create base database models/entities that all stories depend on (Church, Window, User, PhotoSubmission) in backend/prisma/schema.prisma
+- [X] T021 Create initial database migration in backend/prisma/migrations/
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 
@@ -96,22 +96,22 @@ Every task follows this strict format:
 
 ### Implementation for User Story 0
 
-- [ ] T022 [US0] Create comprehensive setup documentation in README.md at repository root
-- [ ] T023 [US0] Create setup script to check prerequisites (Node.js, PostgreSQL) in scripts/check-prerequisites.sh
-- [ ] T024 [US0] Create database initialization script in backend/scripts/init-db.sh
-- [ ] T025 [US0] Create development server startup script in backend/scripts/dev.sh
-- [ ] T026 [US0] Create development server startup script in frontend/scripts/dev.sh
-- [ ] T027 [US0] Create combined startup script for all services in scripts/start-dev.sh
-- [ ] T028 [US0] Add npm scripts for development workflow in backend/package.json (dev, build, migrate, reset)
-- [ ] T029 [US0] Add npm scripts for development workflow in frontend/package.json (dev, build, preview)
-- [ ] T030 [US0] Create database reset script in backend/scripts/reset-db.sh
-- [ ] T031 [US0] Create environment validation script in backend/scripts/validate-env.ts
-- [ ] T032 [US0] Create mock/test versions of external services (Arweave, Cardano) in backend/src/services/mocks/
-- [ ] T033 [US0] Add health check endpoint in backend/src/api/routes/health.ts
+- [X] T022 [US0] Create comprehensive setup documentation in README.md at repository root
+- [X] T023 [US0] Create setup script to check prerequisites (Node.js, PostgreSQL) in scripts/check-prerequisites.sh
+- [X] T024 [US0] Create database initialization script in backend/scripts/init-db.sh
+- [X] T025 [US0] Create development server startup script in backend/scripts/dev.sh
+- [X] T026 [US0] Create development server startup script in frontend/scripts/dev.sh
+- [X] T027 [US0] Create combined startup script for all services in scripts/start-dev.sh
+- [X] T028 [US0] Add npm scripts for development workflow in backend/package.json (dev, build, migrate, reset)
+- [X] T029 [US0] Add npm scripts for development workflow in frontend/package.json (dev, build, preview)
+- [X] T030 [US0] Create database reset script in backend/scripts/reset-db.sh
+- [X] T031 [US0] Create environment validation script in backend/scripts/validate-env.ts
+- [X] T032 [US0] Create mock/test versions of external services (Arweave, Cardano) in backend/src/services/mocks/
+- [X] T033 [US0] Add health check endpoint in backend/src/api/routes/health.ts
 - [ ] T034 [US0] Create quickstart validation checklist in docs/quickstart-checklist.md
-- [ ] T035 [US0] Add hot-reload configuration for backend in backend/vite.config.ts or backend/tsconfig.json
-- [ ] T036 [US0] Add hot-reload configuration for frontend in frontend/vite.config.ts
-- [ ] T037 [US0] Create logging output helpers for developers in backend/src/utils/devLogger.ts
+- [X] T035 [US0] Add hot-reload configuration for backend in backend/vite.config.ts or backend/tsconfig.json
+- [X] T036 [US0] Add hot-reload configuration for frontend in frontend/vite.config.ts
+- [X] T037 [US0] Create logging output helpers for developers in backend/src/utils/devLogger.ts
 
 **Checkpoint**: At this point, User Story 0 should be complete. Developers can follow setup instructions, start all services, and verify functionality.
 
