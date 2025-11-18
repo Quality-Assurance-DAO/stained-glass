@@ -8,6 +8,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "migrate": "prisma migrate dev",
+    "prisma:migrate": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "migrate:reset": "prisma migrate reset",
     "generate": "prisma generate",
@@ -31,7 +32,7 @@
     "pino-pretty": "^10.2.3",
     "arweave": "^1.14.4",
     "@emurgo/cardano-serialization-lib-nodejs": "^11.2.0",
-    "openai": "^1.6.1",
+    "openai": "^6.9.1",
     "sharp": "^0.33.1",
     "express-rate-limit": "^7.1.5",
     "uuid": "^9.0.1"

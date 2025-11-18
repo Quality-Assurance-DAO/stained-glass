@@ -57,6 +57,7 @@ Thumbs.db
 *.db
 *.sqlite
 *.sqlite3
+.database-info.md
 
 # Prisma
 prisma/migrations/
