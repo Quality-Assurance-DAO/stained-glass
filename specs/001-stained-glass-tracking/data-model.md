@@ -1,11 +1,7 @@
 # Data Model: Stained Glass Window Tracking App
 
 **Date**: 2025-01-27  
-**Source**: Feature specification entities and requirements
-
-## Overview
-
-The data model consists of five core entities: Church, Window, PhotoSubmission, User, and supporting reference entities (ArweaveRecord, CardanoAuditTrail). The model supports anonymous user contributions, location verification, AI-based image analysis, and blockchain integration.
+**Database**: PostgreSQL with Prisma ORM
 
 ## Entities
 
@@ -16,29 +12,26 @@ Represents a physical church building with registered coordinates, location info
 **Fields**:
 - `id` (UUID, Primary Key): Unique identifier
 - `name` (String, Required): Church name
-- `county` (String, Required, Indexed): County name for search
-- `town` (String, Required, Indexed): Town/city name for search
+- `county` (String, Required): County name
+- `town` (String, Required): Town/city name
 - `latitude` (Decimal, Required): GPS latitude coordinate
 - `longitude` (Decimal, Required): GPS longitude coordinate
 - `floor_plan_url` (String, Optional): URL to floor plan or spatial overlay image
-- `floor_plan_coordinates` (JSON, Optional): Metadata about floor plan layout (window positions, etc.)
-- `created_at` (Timestamp): Record creation timestamp
-- `updated_at` (Timestamp): Record last update timestamp
-
-**Relationships**:
-- One-to-Many: Church → Windows (a church has multiple windows)
+- `created_at` (DateTime, Required): Record creation timestamp
+- `updated_at` (DateTime, Required): Record last update timestamp
 
 **Validation Rules**:
-- `name`, `county`, `town` must not be empty
-- `latitude` must be between -90 and 90
-- `longitude` must be between -180 and 180
-- Coordinates must be valid decimal numbers
+- Unique constraint on combination of `name + county + town + coordinates` (per FR-044)
+- Coordinates must be valid latitude/longitude values
+- Must have coordinates to allow uploads (per FR-045)
 
-**State Transitions**: None (static entity, updated only by administrators)
+**Relationships**:
+- One-to-many with `Window` (a church has multiple windows)
 
 **Indexes**:
-- Composite index on (`county`, `town`) for search performance
-- Index on (`latitude`, `longitude`) for geospatial queries
+- Index on `county` and `town` for fast search queries
+- Index on `name` for full-text search
+- Composite index on `(county, town, name)` for search optimization
 
 ### Window
 
@@ -47,212 +40,184 @@ Represents a stained glass window within a church, identified by location on the
 **Fields**:
 - `id` (UUID, Primary Key): Unique identifier
 - `church_id` (UUID, Foreign Key → Church.id, Required): Parent church
-- `location_identifier` (String, Required): Identifier for window location (e.g., "North Wall, Window 3", "Chancel East")
-- `floor_plan_coordinates` (JSON, Optional): Coordinates on floor plan (x, y, width, height, or polygon)
-- `description` (String, Optional): Additional description of the window
-- `created_at` (Timestamp): Record creation timestamp
-- `updated_at` (Timestamp): Record last update timestamp
-
-**Relationships**:
-- Many-to-One: Window → Church (each window belongs to one church)
-- One-to-Many: Window → PhotoSubmissions (a window can have multiple photo submissions)
+- `location_description` (String, Optional): Text description of window location (e.g., "North wall, second from left")
+- `coordinates_on_plan` (JSON, Optional): Coordinates on floor plan `{x: number, y: number}` or `null`
+- `created_at` (DateTime, Required): Record creation timestamp
+- `updated_at` (DateTime, Required): Record last update timestamp
 
 **Validation Rules**:
-- `location_identifier` must not be empty
-- `church_id` must reference an existing church
+- Must belong to a valid church
+- Either `location_description` or `coordinates_on_plan` must be provided
 
-**State Transitions**: None (static entity, updated only by administrators or users adding new windows)
+**Relationships**:
+- Many-to-one with `Church` (belongs to one church)
+- One-to-many with `PhotoSubmission` (a window has multiple photo submissions)
 
 **Indexes**:
-- Index on `church_id` for efficient querying of all windows for a church
+- Index on `church_id` for fast church window queries
 
 ### PhotoSubmission
 
-Represents a user-uploaded photo of a stained glass window, containing the image file, metadata, and references to blockchain records.
+Represents a user-uploaded photo of a stained glass window, containing image metadata, location verification, and blockchain references.
 
 **Fields**:
 - `id` (UUID, Primary Key): Unique identifier
-- `window_id` (UUID, Foreign Key → Window.id, Optional): Assigned window (null if unassigned)
-- `user_id` (UUID, Foreign Key → User.id, Required): User who submitted the photo
-- `image_url` (String, Required): URL to image (may be Arweave URL or temporary storage)
+- `window_id` (UUID, Foreign Key → Window.id, Optional): Assigned window (nullable until assigned)
+- `user_id` (UUID, Foreign Key → User.app_id, Required): Anonymous user who uploaded
 - `arweave_tx_id` (String, Optional): Arweave transaction ID (null until uploaded)
-- `cardano_tx_hash` (String, Optional): Cardano transaction hash (null until logged)
-- `timestamp` (Timestamp, Required): When photo was taken (from EXIF or user input)
-- `location_latitude` (Decimal, Required): GPS latitude where photo was taken
-- `location_longitude` (Decimal, Required): GPS longitude where photo was taken
-- `location_verified` (Boolean, Required): Whether location was GPS-verified (true) or manually verified (false)
-- `location_distance_meters` (Decimal, Optional): Distance from church coordinates in meters
-- `ai_classification` (JSON, Optional): AI analysis results (window identification, quality score, etc.)
-- `quality_score` (Decimal, Optional): Overall quality score (0-1)
-- `is_primary` (Boolean, Default: false): Whether this is the primary/clearest photo for the window
-- `is_deleted` (Boolean, Default: false): Soft delete flag (FR-021: blockchain records remain immutable)
-- `metadata` (JSON, Optional): Additional metadata (camera settings, EXIF data, etc.)
-- `created_at` (Timestamp): Record creation timestamp
-- `updated_at` (Timestamp): Record last update timestamp
-
-**Relationships**:
-- Many-to-One: PhotoSubmission → Window (each submission can be assigned to one window)
-- Many-to-One: PhotoSubmission → User (each submission belongs to one user)
-- One-to-One: PhotoSubmission → ArweaveRecord (via arweave_tx_id reference)
-- One-to-One: PhotoSubmission → CardanoAuditTrail (via cardano_tx_hash reference)
+- `cardano_tx_id` (String, Optional): Cardano transaction ID for audit trail (null until logged)
+- `image_hash` (String, Required): SHA-256 hash of image file for duplicate detection
+- `timestamp` (DateTime, Required): Photo capture timestamp
+- `latitude` (Decimal, Required): Verified GPS latitude at upload time
+- `longitude` (Decimal, Required): Verified GPS longitude at upload time
+- `location_verified` (Boolean, Required): Whether location was GPS-verified (true) or manually overridden (false)
+- `ai_classification` (JSON, Optional): AI analysis results `{window_detected: boolean, quality_score: number, description: string, needs_manual_review: boolean}`
+- `metadata` (JSON, Optional): Additional user-provided metadata `{notes: string, description: string}`
+- `deleted_at` (DateTime, Optional): Soft delete timestamp (null if active)
+- `created_at` (DateTime, Required): Record creation timestamp
+- `updated_at` (DateTime, Required): Record last update timestamp
 
 **Validation Rules**:
-- `image_url` must be a valid URL
-- `location_latitude` must be between -90 and 90
-- `location_longitude` must be between -180 and 180
-- `timestamp` must be a valid timestamp
-- `quality_score` must be between 0 and 1 if provided
-- If `window_id` is provided, it must reference an existing window
-- If `location_verified` is false, user must have confirmed manual override
+- `image_hash` must be unique per window within 1 hour (duplicate detection per FR-042)
+- `latitude` and `longitude` must be valid coordinates
+- Location must be within 50 meters of church coordinates (unless manual override)
+- Editable fields: `window_id`, `metadata` (per FR-020)
+- Immutable fields: `image_hash`, `timestamp`, `latitude`, `longitude`, `arweave_tx_id`, `cardano_tx_id`, `user_id` (per FR-020)
 
-**State Transitions**:
-1. **Created** → **Uploading**: Photo captured, queued for upload
-2. **Uploading** → **Processing**: Uploaded to Arweave, awaiting AI analysis
-3. **Processing** → **Assigned**: AI analysis complete, assigned to window (or flagged for manual assignment)
-4. **Assigned** → **Deleted**: User deletes submission (soft delete, `is_deleted = true`)
-5. **Assigned** → **Updated**: User edits submission metadata
+**Relationships**:
+- Many-to-one with `Window` (belongs to one window, nullable)
+- Many-to-one with `User` (uploaded by one user)
 
 **Indexes**:
-- Index on `window_id` for efficient querying of all photos for a window
-- Index on `user_id` for user contribution tracking
-- Index on `is_deleted` for filtering active submissions
-- Index on `is_primary` for finding primary photos
-- Index on (`location_latitude`, `location_longitude`) for geospatial queries
-- Index on `created_at` for chronological sorting
+- Index on `window_id` for window photo queries
+- Index on `user_id` for user submission queries
+- Index on `image_hash` for duplicate detection
+- Index on `deleted_at` for filtering active submissions
+- Composite index on `(window_id, image_hash, timestamp)` for duplicate detection within time window
 
 ### User
 
 Represents an anonymous user identified by persistent app ID, with contribution tracking.
 
 **Fields**:
-- `id` (UUID, Primary Key): Unique identifier
-- `app_id` (String, Unique, Required, Indexed): Anonymous persistent app ID (generated client-side)
-- `contribution_count` (Integer, Default: 0): Total number of photo submissions
-- `contribution_quality_avg` (Decimal, Optional): Average quality score of contributions
-- `created_at` (Timestamp): Record creation timestamp
-- `updated_at` (Timestamp): Record last update timestamp
-
-**Relationships**:
-- One-to-Many: User → PhotoSubmissions (a user can have multiple submissions)
+- `app_id` (UUID, Primary Key): Anonymous persistent app ID (generated client-side)
+- `contribution_count` (Integer, Default: 0): Number of photo submissions
+- `quality_score` (Decimal, Optional): Aggregate quality score based on AI analysis
+- `created_at` (DateTime, Required): First app usage timestamp
+- `updated_at` (DateTime, Required): Last activity timestamp
 
 **Validation Rules**:
-- `app_id` must be unique and not empty
-- `app_id` format: Should be a secure random string (e.g., UUID v4 or crypto.randomUUID())
-- `contribution_count` must be non-negative
-- `contribution_quality_avg` must be between 0 and 1 if provided
+- `app_id` must be unique (per FR-017)
+- Server-side validation to prevent duplicates/spoofing
 
-**State Transitions**: None (user record is created on first use, updated as contributions are made)
+**Relationships**:
+- One-to-many with `PhotoSubmission` (a user has multiple submissions)
 
 **Indexes**:
-- Unique index on `app_id` for user lookup
-- Index on `contribution_count` for leaderboards/statistics
+- Index on `app_id` for user lookup (primary key)
 
-### ArweaveRecord (Reference Entity)
+### AuditTrail
 
-Represents the immutable storage record on Arweave. Not stored in database, but referenced by PhotoSubmission.
+Represents Cardano blockchain audit trail entries for photo submissions and edits.
 
-**Fields** (stored on Arweave, referenced by `arweave_tx_id`):
-- Transaction ID: Arweave transaction ID (stored in PhotoSubmission.arweave_tx_id)
-- Image file: The actual image file
-- Metadata: JSON metadata including timestamp, location, user app_id, window_id, etc.
+**Fields**:
+- `id` (UUID, Primary Key): Unique identifier
+- `submission_id` (UUID, Foreign Key → PhotoSubmission.id, Required): Related photo submission
+- `action` (String, Required): Action type `'upload' | 'edit' | 'delete'`
+- `cardano_tx_id` (String, Optional): Cardano transaction ID (null until confirmed)
+- `metadata` (JSON, Optional): Action-specific metadata `{field_changed: string, old_value: any, new_value: any}`
+- `queued_at` (DateTime, Required): When audit entry was created
+- `confirmed_at` (DateTime, Optional): When Cardano transaction was confirmed
+- `retry_count` (Integer, Default: 0): Number of retry attempts
+- `created_at` (DateTime, Required): Record creation timestamp
 
-**Access Pattern**: 
-- Frontend queries Arweave network using transaction ID
-- Backend may cache Arweave data for performance
+**Validation Rules**:
+- `action` must be one of: 'upload', 'edit', 'delete'
+- `submission_id` must reference valid photo submission
 
-### CardanoAuditTrail (Reference Entity)
+**Relationships**:
+- Many-to-one with `PhotoSubmission` (belongs to one submission)
 
-Represents the blockchain audit log entry on Cardano. Not stored in database, but referenced by PhotoSubmission.
+**Indexes**:
+- Index on `submission_id` for submission audit queries
+- Index on `cardano_tx_id` for blockchain verification
+- Index on `confirmed_at` for pending transaction queries
 
-**Fields** (stored on Cardano, referenced by `cardano_tx_hash`):
-- Transaction hash: Cardano transaction hash (stored in PhotoSubmission.cardano_tx_hash)
-- Audit data: JSON data including photo submission ID, timestamp, Arweave transaction ID, user app_id, etc.
+### UploadQueue
 
-**Access Pattern**:
-- Frontend queries Cardano blockchain using transaction hash
-- Backend may cache Cardano data for performance
+Represents queued uploads to Arweave and Cardano when networks are unavailable.
 
-## Database Schema Summary
+**Fields**:
+- `id` (UUID, Primary Key): Unique identifier
+- `submission_id` (UUID, Foreign Key → PhotoSubmission.id, Required): Related photo submission
+- `queue_type` (String, Required): Queue type `'arweave' | 'cardano'`
+- `payload` (JSON, Required): Queue-specific payload data
+- `status` (String, Required): Status `'pending' | 'processing' | 'completed' | 'failed'`
+- `retry_count` (Integer, Default: 0): Number of retry attempts
+- `next_retry_at` (DateTime, Optional): Next retry timestamp (exponential backoff)
+- `error_message` (String, Optional): Last error message if failed
+- `created_at` (DateTime, Required): Queue entry creation timestamp
+- `updated_at` (DateTime, Required): Last update timestamp
 
-### Tables
+**Validation Rules**:
+- `queue_type` must be 'arweave' or 'cardano'
+- `status` must be one of: 'pending', 'processing', 'completed', 'failed'
+- Maximum retry count: 10 (then flag for manual review)
 
-1. **churches**
-   - Primary Key: `id` (UUID)
-   - Indexes: (`county`, `town`), (`latitude`, `longitude`)
+**Relationships**:
+- Many-to-one with `PhotoSubmission` (belongs to one submission)
 
-2. **windows**
-   - Primary Key: `id` (UUID)
-   - Foreign Key: `church_id` → `churches.id`
-   - Indexes: `church_id`
+**Indexes**:
+- Index on `status` and `next_retry_at` for queue processing
+- Index on `submission_id` for submission queue queries
+- Composite index on `(status, next_retry_at)` for efficient queue polling
 
-3. **users**
-   - Primary Key: `id` (UUID)
-   - Unique: `app_id` (String)
-   - Indexes: `app_id`, `contribution_count`
+## State Transitions
 
-4. **photo_submissions**
-   - Primary Key: `id` (UUID)
-   - Foreign Keys: `window_id` → `windows.id`, `user_id` → `users.id`
-   - Indexes: `window_id`, `user_id`, `is_deleted`, `is_primary`, (`location_latitude`, `location_longitude`), `created_at`
+### PhotoSubmission Lifecycle
 
-### Relationships Diagram
+1. **Created**: User uploads photo → `PhotoSubmission` created with `window_id = null`, `arweave_tx_id = null`, `cardano_tx_id = null`
+2. **Queued**: If Arweave/Cardano unavailable → `UploadQueue` entries created
+3. **Arweave Uploaded**: Arweave upload succeeds → `arweave_tx_id` updated, `UploadQueue` status = 'completed'
+4. **Cardano Logged**: Cardano transaction succeeds → `cardano_tx_id` updated, `AuditTrail` entry created with `confirmed_at`
+5. **Window Assigned**: User assigns to window → `window_id` updated, new `AuditTrail` entry for edit action
+6. **Edited**: User edits metadata → `metadata` updated, new `AuditTrail` entry for edit action
+7. **Deleted**: User deletes submission → `deleted_at` set, new `AuditTrail` entry for delete action (blockchain records remain)
 
-```
-Church (1) ──< (Many) Window (1) ──< (Many) PhotoSubmission
-                                                      │
-                                                      │
-User (1) ──< (Many) PhotoSubmission ──> (1) ArweaveRecord (via tx_id)
-                                                      │
-                                                      │
-                                            (1) CardanoAuditTrail (via tx_hash)
-```
+### UploadQueue Lifecycle
 
-## Data Validation Rules
+1. **Pending**: Queue entry created → `status = 'pending'`, `next_retry_at` set
+2. **Processing**: Worker picks up entry → `status = 'processing'`
+3. **Completed**: Upload succeeds → `status = 'completed'`
+4. **Failed**: Upload fails → `status = 'failed'`, `retry_count++`, `next_retry_at` recalculated (exponential backoff)
+5. **Max Retries**: After 10 retries → Flag for manual review
 
-### Location Verification
+## Validation Rules Summary
 
-- User location must be within 50 meters of church coordinates (Haversine formula)
-- If GPS unavailable, manual override requires user confirmation (FR-026)
-- Distance stored in `location_distance_meters` for audit purposes
+### Church
+- Unique: `(name, county, town, latitude, longitude)`
+- Coordinates required for uploads
 
-### Image Quality
+### PhotoSubmission
+- Duplicate detection: Same `image_hash` + same `window_id` + within 1 hour = reject
+- Location verification: Within 50m of church coordinates (or manual override)
+- Immutable fields: `image_hash`, `timestamp`, `latitude`, `longitude`, `arweave_tx_id`, `cardano_tx_id`, `user_id`
+- Editable fields: `window_id`, `metadata`
 
-- Quality score calculated from:
-  - Brightness analysis (client-side)
-  - Contrast analysis (client-side)
-  - Sharpness/blur detection (client-side)
-  - AI classification (server-side)
-- Primary photo selection: Highest quality score for each window
+### User
+- Unique: `app_id`
+- Server-side validation to prevent duplicates
 
-### AI Classification
+## Database Migrations
 
-- AI analysis results stored in `ai_classification` JSON field:
-  - `window_identified`: Boolean (whether window was identified)
-  - `suggested_window_id`: UUID (suggested window assignment)
-  - `confidence`: Decimal (0-1 confidence score)
-  - `quality_issues`: Array of strings (e.g., ["too_dark", "blurry"])
-  - `is_relevant`: Boolean (whether image is relevant stained glass window)
+Initial migration will create all tables with:
+- Proper foreign key constraints
+- Indexes for performance
+- Unique constraints
+- Default values
+- Timestamp tracking (created_at, updated_at)
 
-### Soft Delete
-
-- When user deletes submission (FR-021):
-  - `is_deleted` set to `true`
-  - Removed from active collection views
-  - Arweave and Cardano records remain immutable (cannot be deleted)
-
-## Data Migration Considerations
-
-- Initial schema creation with migrations (TypeORM/Prisma)
-- Future migrations may add:
-  - Additional metadata fields
-  - New indexes for performance
-  - Additional relationships
-
-## Performance Considerations
-
-- Database indexes on all foreign keys and search fields
-- Pagination for large result sets (churches, windows, submissions)
-- Caching for frequently accessed church data
-- Lazy loading of images (load on demand)
-- CDN for image delivery
-
+Future migrations may include:
+- Additional indexes based on query patterns
+- New fields for enhanced features
+- Data migrations for schema changes

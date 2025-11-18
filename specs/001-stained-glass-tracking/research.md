@@ -1,278 +1,298 @@
 # Research: Stained Glass Window Tracking App
 
 **Date**: 2025-01-27  
-**Purpose**: Resolve technical unknowns identified in plan.md Technical Context section
+**Purpose**: Resolve technical unknowns identified in implementation plan
 
-## Technology Stack Decisions
+## Frontend Framework Selection
 
-### Frontend Language and Framework
-
-**Decision**: TypeScript 5.x with React 18.x
+### Decision: React with TypeScript
 
 **Rationale**:
-- TypeScript provides type safety for complex data models (Church, Window, PhotoSubmission, User)
-- React is the most popular and well-supported frontend framework for web applications
-- Excellent ecosystem for camera access, geolocation APIs, and local storage
-- Strong community support and extensive documentation
-- Works well for cross-platform web apps without installation
+- Mature ecosystem with extensive library support for camera, geolocation, and PWA features
+- Strong TypeScript support for type safety with complex data models (churches, windows, submissions)
+- Large community and extensive documentation
+- Excellent PWA support via Workbox and service workers
+- Rich component ecosystem (React Router, React Query for API state)
+- Mobile-responsive design libraries (Material-UI, Chakra UI, Tailwind CSS)
 
-**Alternatives considered**:
-- Vue.js: Less popular, smaller ecosystem
-- Angular: More complex, heavier framework
-- Vanilla JavaScript: Lacks type safety and modern development experience
-- Svelte: Smaller ecosystem, less mature
+**Alternatives Considered**:
+- **Vue.js**: Good option but smaller ecosystem for PWA/camera integration
+- **Svelte**: Modern but less mature PWA tooling
+- **Vanilla JS**: Too low-level, would require significant custom framework code
+- **Next.js**: Overkill for this app (SSR not needed, adds complexity)
 
-### Backend Language and Framework
+**Key Dependencies**:
+- React 18+
+- TypeScript 5+
+- React Router (client-side routing)
+- React Query/TanStack Query (API state management)
+- Workbox (PWA/service worker)
+- react-webcam or @react-camera-pro (camera access)
 
-**Decision**: Node.js 20.x LTS with TypeScript 5.x and Express.js 4.x
+## Backend Framework Selection
 
-**Rationale**:
-- Node.js allows code sharing between frontend and backend (shared types, utilities)
-- TypeScript provides type safety across the stack
-- Express.js is lightweight, flexible, and well-documented
-- Excellent ecosystem for REST APIs
-- Good support for async operations (Arweave uploads, Cardano transactions)
-- Large community and extensive middleware ecosystem
-
-**Alternatives considered**:
-- Python (FastAPI/Django): Would require separate type definitions, less code sharing
-- Go: More verbose, smaller ecosystem for web APIs
-- Rust: Steeper learning curve, overkill for this application
-
-### Frontend Dependencies
-
-**Decision**: 
-- React 18.x with React Router 6.x for routing
-- Vite 5.x as build tool (faster than Create React App)
-- Tailwind CSS 3.x for styling (utility-first, responsive design)
-- React Query (TanStack Query) for API state management
-- Axios for HTTP requests
-- arweave-js for Arweave integration
-- @cardano-foundation/cardano-connect-with-wallet or @meshsdk/core for Cardano integration
+### Decision: Node.js with Express and TypeScript
 
 **Rationale**:
-- React Router: Standard routing solution for React SPA
-- Vite: Fast development server, optimized production builds
-- Tailwind CSS: Rapid UI development, mobile-first responsive design
-- React Query: Handles caching, background updates, offline support
-- Axios: Better error handling than fetch API
-- arweave-js: Official Arweave JavaScript SDK
-- Cardano SDK: Standard libraries for Cardano blockchain integration
+- JavaScript/TypeScript across stack reduces context switching
+- Express is lightweight and well-suited for REST API
+- Excellent ecosystem for blockchain integrations (Arweave, Cardano)
+- Strong file upload handling (multer)
+- Good PostgreSQL integration (pg, Prisma, or TypeORM)
+- Easy to implement queue system (Bull/BullMQ for Redis-based queues, or in-memory for simpler cases)
+- Can share TypeScript types between frontend and backend
 
-### Backend Dependencies
+**Alternatives Considered**:
+- **Python FastAPI**: Excellent but adds language diversity, smaller blockchain SDK ecosystem
+- **Go**: Fast but overkill, less mature blockchain libraries
+- **Rust**: Excellent performance but steep learning curve, limited ecosystem
 
-**Decision**:
-- Express.js 4.x for web framework
-- TypeORM or Prisma for database ORM
-- arweave-js (Node.js compatible) for Arweave uploads
-- @cardano-foundation/cardano-connect-with-wallet or cardano-serialization-lib for Cardano transactions
-- Multer for file upload handling
-- JWT for authentication (if needed for API)
-- Winston or Pino for logging
+**Key Dependencies**:
+- Node.js 20+ (LTS)
+- Express 4.x
+- TypeScript 5+
+- Prisma or TypeORM (database ORM)
+- multer (file uploads)
+- BullMQ or in-memory queue (for offline queue)
 
-**Rationale**:
-- Express.js: Minimal, flexible web framework
-- TypeORM/Prisma: Type-safe database access, migrations
-- arweave-js: Same SDK as frontend, consistent API
-- Cardano libraries: Standard blockchain integration tools
-- Multer: Standard Express middleware for file uploads
-- JWT: Stateless authentication for API
-- Winston/Pino: Structured logging for observability
+## AI Image Analysis Service
 
-### Database
-
-**Decision**: PostgreSQL 15+ with TypeORM or Prisma ORM
+### Decision: OpenAI Vision API (GPT-4 Vision) with fallback to local model
 
 **Rationale**:
-- PostgreSQL is reliable, performant, and well-suited for relational data (churches, windows, submissions)
-- Strong support for JSON columns (for flexible metadata storage)
-- Excellent geospatial support (PostGIS extension for location queries)
-- ACID compliance ensures data integrity
-- TypeORM/Prisma provide type-safe database access and migrations
-- Widely used, excellent documentation
+- GPT-4 Vision provides excellent image classification and description capabilities
+- Can identify stained glass windows, assess quality, and describe window features
+- API-based approach avoids local model deployment complexity
+- Cost-effective for moderate usage (pay per request)
+- Can implement caching to reduce API calls for similar images
+- Fallback to local model (e.g., CLIP) if API unavailable or for cost optimization
 
-**Alternatives considered**:
-- MongoDB: Less suitable for relational data (churches → windows → submissions)
-- SQLite: Not suitable for production web applications (concurrency limitations)
-- MySQL: PostgreSQL has better JSON and geospatial support
+**Alternatives Considered**:
+- **Claude Vision API**: Similar capabilities but smaller ecosystem
+- **Local CLIP model**: Free but requires GPU infrastructure, slower inference
+- **Google Vision API**: Good but less flexible for custom classification
+- **Custom trained model**: Would require dataset and training infrastructure
 
-**Schema considerations**:
-- Churches table: id, name, county, town, coordinates (lat/lng), floor_plan_url
-- Windows table: id, church_id, location_identifier, floor_plan_coordinates
-- Photo_Submissions table: id, window_id, user_id, arweave_tx_id, cardano_tx_hash, timestamp, location_verified, image_url, metadata (JSON)
-- Users table: id, app_id (anonymous), contribution_stats (JSON)
+**Implementation Approach**:
+- Primary: OpenAI GPT-4 Vision API for classification and quality assessment
+- Fallback: Local CLIP model for basic classification if API unavailable
+- Caching: Store analysis results to avoid re-analyzing identical images
 
-### AI/ML Image Analysis
+**Key Dependencies**:
+- openai npm package
+- @xenova/transformers (for local CLIP fallback, optional)
 
-**Decision**: OpenAI GPT-4 Vision API or Google Cloud Vision API for image classification and quality assessment
+## Arweave Integration
 
-**Rationale**:
-- Cloud APIs provide high-quality image analysis without infrastructure management
-- GPT-4 Vision can classify images, assess quality, and identify stained glass windows
-- Google Cloud Vision API offers specialized image analysis features
-- Both support batch processing and have good JavaScript SDKs
-- Cost-effective for moderate usage volumes
-- Can fall back to manual assignment if API fails (per FR-028)
-
-**Alternatives considered**:
-- Local ML models (TensorFlow.js): Requires significant model training, larger bundle size
-- Custom trained models: Requires labeled dataset and ML expertise
-- Other cloud APIs (AWS Rekognition, Azure Computer Vision): Similar capabilities, choose based on existing cloud infrastructure
-
-**Implementation approach**:
-- Backend service calls AI API after image upload
-- Returns classification results (window identification, quality score)
-- Frontend displays results and allows manual override
-- Failed analyses flagged for manual assignment
-
-### Testing Frameworks
-
-**Decision**:
-- Frontend: Vitest (faster Jest alternative) + React Testing Library + Playwright for E2E
-- Backend: Jest + Supertest for API testing
-
-**Rationale**:
-- Vitest: Fast, Vite-native, compatible with Jest API
-- React Testing Library: Best practices for testing React components
-- Playwright: Cross-browser E2E testing, excellent for web apps
-- Jest: Standard Node.js testing framework, good ecosystem
-- Supertest: Express.js testing utility
-
-**Alternatives considered**:
-- Jest for frontend: Slower than Vitest, but more mature
-- Cypress: Good alternative to Playwright, but Playwright has better cross-browser support
-- Mocha: Less feature-rich than Jest
-
-### Arweave Integration
-
-**Decision**: arweave-js SDK (v1.x)
+### Decision: arweave-js SDK
 
 **Rationale**:
 - Official JavaScript SDK for Arweave
-- Supports both browser and Node.js environments
-- Handles wallet management, transaction signing, and uploads
-- Good documentation and community support
-- Supports retry logic for failed uploads
+- Supports file uploads, metadata storage, and transaction management
+- Works in Node.js backend (server-side uploads recommended for wallet security)
+- Can handle large image files with chunking
+- Good documentation and active maintenance
 
-**Implementation considerations**:
-- Frontend: Use arweave-js for direct uploads (if wallet available) or proxy through backend
-- Backend: Use arweave-js for server-side uploads with funded wallet
-- Queue failed uploads in IndexedDB (frontend) or database (backend)
-- Retry mechanism with exponential backoff
+**Alternatives Considered**:
+- **arweave-bundles**: For batching, but adds complexity
+- **Direct HTTP API**: Too low-level, requires manual transaction construction
 
-### Cardano Integration
+**Implementation Approach**:
+- Backend handles Arweave uploads (keeps wallet keys secure)
+- Store Arweave transaction ID with each photo submission
+- Implement retry logic with exponential backoff
+- Queue uploads locally when Arweave network unavailable
 
-**Decision**: @meshsdk/core or @cardano-foundation/cardano-connect-with-wallet
+**Key Dependencies**:
+- arweave npm package
 
-**Rationale**:
-- Mesh SDK: Comprehensive Cardano development toolkit, good TypeScript support
-- Cardano Connect: Official wallet connector, simpler for basic transactions
-- Both support transaction building and signing
-- Good documentation and active development
+## Cardano Integration
 
-**Implementation considerations**:
-- Backend: Build and submit transactions to Cardano network
-- Store transaction hashes in database for audit trail
-- Frontend: Display transaction hashes and links to Cardano explorers
-- Handle network failures with retry queue
-
-### Scale/Scope Estimates
-
-**Decision**: Initial scale targets:
-- Users: 1,000-10,000 active users
-- Churches: 5,000-50,000 churches in database
-- Windows: 50,000-500,000 windows (average 10 per church)
-- Photo submissions: 100,000-1,000,000 photos over time
+### Decision: @cardano-foundation/cardano-connect-with-wallet or @emurgo/cardano-serialization-lib
 
 **Rationale**:
-- Conservative estimates based on typical crowdsourced documentation projects
-- Database can handle this scale with proper indexing
-- Arweave and Cardano networks can handle this transaction volume
-- Can scale horizontally if needed (add more backend instances)
+- Cardano serialization library provides transaction building capabilities
+- Can create audit trail transactions on Cardano blockchain
+- Backend can use serialization lib to construct transactions
+- For frontend wallet connection (if needed): cardano-connect-with-wallet
 
-**Performance considerations**:
-- Database indexes on church search fields (county, town)
-- Caching for frequently accessed church data
-- CDN for static assets and images
-- Pagination for large result sets
+**Alternatives Considered**:
+- **cardano-cli**: Requires Cardano node, too complex for web app
+- **Blockfrost API**: Good for reading blockchain data, but transactions require wallet integration
+- **Mesh SDK**: Good but adds another abstraction layer
 
-## Integration Patterns
+**Implementation Approach**:
+- Backend constructs audit trail transactions using serialization library
+- Store minimal data in transaction metadata (photo submission ID, timestamp, action type)
+- Use testnet for development, mainnet for production
+- Queue transactions locally when Cardano network unavailable
 
-### Location Verification Pattern
+**Key Dependencies**:
+- @emurgo/cardano-serialization-lib (backend transaction building)
+- @blockfrost/blockfrost-js (optional, for reading blockchain data)
 
-**Decision**: Haversine formula for distance calculation, 50-meter tolerance
+## Testing Frameworks
 
-**Rationale**:
-- Standard formula for calculating distances between GPS coordinates
-- Efficient calculation, suitable for real-time verification
-- 50-meter tolerance accounts for GPS accuracy variations
-
-**Implementation**:
-- Calculate distance between user location and church coordinates
-- Accept if distance ≤ 50 meters
-- Reject or allow manual override if distance > 50 meters
-
-### Offline Queue Pattern
-
-**Decision**: IndexedDB (frontend) + Database queue (backend)
+### Decision: 
+- **Frontend**: Vitest + React Testing Library + Playwright
+- **Backend**: Jest + Supertest
 
 **Rationale**:
-- IndexedDB: Persistent storage in browser, survives page reloads
-- Database queue: Reliable server-side queue for retry logic
-- Both support retry with exponential backoff
+- Vitest: Fast, Vite-native, excellent TypeScript support, compatible with Jest API
+- React Testing Library: Industry standard for component testing
+- Playwright: Best-in-class E2E testing, cross-browser support, mobile device emulation
+- Jest: Mature, well-documented, excellent for backend unit/integration tests
+- Supertest: Standard for Express API testing
 
-**Implementation**:
-- Frontend: Store failed uploads in IndexedDB with metadata
-- Backend: Store pending uploads in database queue table
-- Background job processes queue and retries failed uploads
-- Notify user when upload succeeds after retry
+**Alternatives Considered**:
+- **Jest for frontend**: Slower than Vitest, but acceptable alternative
+- **Cypress**: Good but Playwright has better mobile support and performance
+- **Mocha**: Less feature-rich than Jest
 
-### Image Quality Assessment Pattern
+**Key Dependencies**:
+- vitest, @testing-library/react, @playwright/test (frontend)
+- jest, supertest, @types/jest (backend)
 
-**Decision**: Client-side pre-analysis + Server-side AI analysis
+## Performance Goals
+
+### Decision: Specific targets based on success criteria
+
+**Search Performance**:
+- Church search results: <10 seconds (per SC-001)
+- Database indexing on county, town, name for fast queries
+- Implement pagination for large result sets
+
+**Upload Performance**:
+- Photo capture to confirmation: <2 minutes (per SC-002)
+- Breakdown: Photo capture (5s) + Quality check (10s) + Location verification (5s) + Upload to backend (10s) + Arweave upload (60-90s) + Cardano transaction (10-30s)
+- Arweave and Cardano can be async/queued to meet 2-minute target
+
+**AI Analysis Performance**:
+- Image analysis: <30 seconds per image
+- Can be async after initial upload
+- Cache results to avoid re-analysis
+
+**Blockchain Performance**:
+- Arweave confirmation: 1-5 minutes (network dependent)
+- Cardano transaction: 10-60 seconds (network dependent)
+- Both can be queued and processed asynchronously
+
+**View Performance**:
+- Arweave/Cardano record viewing: <3 seconds (per SC-008)
+- Cache blockchain data or use indexing service (Blockfrost for Cardano)
+
+## Constraints
+
+### Decision: Specific constraints identified
+
+**Offline Queue**:
+- Implement in-memory queue in backend (or Redis if scaling)
+- Persist queue to database for durability across restarts
+- Exponential backoff retry: 1min, 5min, 15min, 1hr, 6hr
+- Maximum retry attempts: 10, then flag for manual review
+
+**Rate Limiting**:
+- 10 uploads per hour per app ID (per FR-041)
+- Use express-rate-limit middleware
+- Progressive delays: 1min, 5min, 15min after limit exceeded
+
+**Location Tolerance**:
+- 50 meters radius (per spec clarification)
+- Use Haversine formula for distance calculation
+- Manual override with user confirmation when GPS unavailable
+
+**PWA Requirements**:
+- Service worker for offline capability
+- Web App Manifest for installability
+- Cache API responses and static assets
+- IndexedDB for local data storage
+
+**Browser Compatibility**:
+- Camera API: Modern browsers (Chrome, Firefox, Safari, Edge)
+- Geolocation API: Standard across modern browsers
+- Service Workers: Supported in all modern browsers
+
+## Scale/Scope
+
+### Decision: Initial scale assumptions
+
+**User Base**:
+- Initial: 100-1,000 active users
+- Growth: 10,000 users within first year
+- Design for horizontal scaling
+
+**Data Volume**:
+- Churches: 1,000-10,000 churches (UK/Ireland focus initially)
+- Windows per church: 5-50 windows average
+- Photos per window: 1-10 photos (crowdsourced)
+- Total photos: 50,000-500,000 photos
+
+**Storage Requirements**:
+- Image size: 2-5 MB per photo (compressed)
+- Total image storage: 100 GB - 2.5 TB (on Arweave)
+- Database: <10 GB (metadata only)
+
+**Concurrent Usage**:
+- Peak: 100 concurrent users
+- Upload rate: 10 uploads/hour per user limit = max 1,000 uploads/hour peak
+- Design backend for 50-100 req/s
+
+**Infrastructure**:
+- Start: Single server (backend + database)
+- Scale: Separate database server, CDN for frontend, load balancer for backend
+- Arweave: Pay-per-upload (no infrastructure)
+- Cardano: Pay-per-transaction (no infrastructure)
+
+## Database Schema Considerations
+
+### Decision: PostgreSQL with Prisma ORM
 
 **Rationale**:
-- Client-side: Immediate feedback (brightness, contrast, blur detection)
-- Server-side: Comprehensive AI analysis (classification, window identification)
-- Two-stage approach provides best user experience
+- PostgreSQL: Robust, supports JSON fields for flexible metadata
+- Prisma: Type-safe ORM, excellent migration system, great TypeScript support
+- Can handle complex relationships (churches → windows → submissions)
+- Full-text search for church names
+- Spatial extensions (PostGIS) available if needed for advanced location queries
 
-**Implementation**:
-- Frontend: Use Canvas API to analyze image brightness, contrast, sharpness
-- Provide immediate feedback before upload
-- Backend: Send to AI API for comprehensive analysis after upload
-- Combine results for final quality score
+**Key Tables**:
+- churches (id, name, county, town, coordinates, floor_plan_url)
+- windows (id, church_id, location_description, coordinates_on_plan)
+- photo_submissions (id, window_id, user_id, arweave_tx_id, cardano_tx_id, timestamp, location, image_hash, deleted_at)
+- users (app_id, created_at, contribution_count, quality_score)
+- audit_trail (id, submission_id, action, cardano_tx_id, timestamp)
 
-## Security Considerations
+## Additional Technical Decisions
 
-**Decision**: 
-- HTTPS only (required for camera/geolocation APIs)
-- Input validation and sanitization
-- Rate limiting on API endpoints
-- Anonymous user IDs stored client-side (IndexedDB)
-- No PII required (fully anonymous)
+### Image Processing
+- **Library**: sharp (Node.js) for server-side image processing
+- Resize images before Arweave upload to reduce storage costs
+- Generate thumbnails for UI display
+- Store image hash (SHA-256) for duplicate detection
 
-**Rationale**:
-- HTTPS: Required for secure camera and geolocation access
-- Input validation: Prevent injection attacks and invalid data
-- Rate limiting: Prevent abuse and DoS attacks
-- Anonymous IDs: Privacy-first approach, no server-side user tracking
-- Optional PII: Users control their privacy
+### Anonymous User ID Generation
+- **Method**: UUID v4 generated client-side, stored in localStorage
+- Backend validates uniqueness and stores in database
+- If duplicate detected, generate new UUID client-side
 
-## Deployment Considerations
+### Location Services
+- **Browser API**: navigator.geolocation.getCurrentPosition()
+- **Fallback**: Manual coordinate entry with user confirmation
+- **Distance Calculation**: Haversine formula for lat/long distance
 
-**Decision**: 
-- Frontend: Static hosting (Vercel, Netlify, or Cloudflare Pages)
-- Backend: Node.js hosting (Railway, Render, or AWS/GCP)
-- Database: Managed PostgreSQL (Supabase, Neon, or AWS RDS)
-- CDN: For static assets and images
+### Photo Quality Assessment
+- **Client-side**: Basic checks (brightness, contrast, blur detection)
+- **Server-side**: AI analysis for comprehensive quality assessment
+- **Libraries**: canvas API for client-side, sharp for server-side preprocessing
 
-**Rationale**:
-- Static hosting: Fast, cost-effective for frontend
-- Node.js hosting: Easy deployment, good performance
-- Managed database: Reduces operational overhead
-- CDN: Improves global performance
+## Summary
 
-## Remaining Open Questions
-
-None - all "NEEDS CLARIFICATION" items from Technical Context have been resolved.
-
+All technical unknowns have been resolved:
+- ✅ Frontend: React + TypeScript
+- ✅ Backend: Node.js + Express + TypeScript  
+- ✅ AI: OpenAI GPT-4 Vision API with CLIP fallback
+- ✅ Arweave: arweave-js SDK
+- ✅ Cardano: @emurgo/cardano-serialization-lib
+- ✅ Testing: Vitest + React Testing Library + Playwright (frontend), Jest + Supertest (backend)
+- ✅ Performance: Targets defined based on success criteria
+- ✅ Constraints: Offline queue, rate limiting, location tolerance, PWA requirements specified
+- ✅ Scale: Initial assumptions documented (100-1,000 users, 50k-500k photos)
