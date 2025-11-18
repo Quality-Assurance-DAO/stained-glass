@@ -3,7 +3,7 @@
 **Feature Branch**: `001-stained-glass-tracking`  
 **Created**: 2025-01-27  
 **Status**: Draft  
-**Input**: User description: "Develop a cross-platform, install-free web app that enables users to easily record and track stained glass windows in churches, storing all image files and metadata on Arweave with an audit trail logged to the Cardano blockchain; the app should open with a simple search interface allowing users to find churches by county and town, then display an orienting visual (e.g., floor plan or spatial overlay) for the selected church; the app must detect whether windows for that church have already been photographed and display existing submissions while still allowing additional crowdsourced uploads, using AI-based image analysis to classify images, identify windows, select the clearest or largest valid photos, and filter out irrelevant or low-quality ones; the app should request location-sharing consent when needed and use the user's geolocation to verify they are at the correct church before accepting an upload; users must be able to take photos directly in the app, receive feedback on unusable shots (too dark, too bright, poorly framed, etc.), and then assign the image to the correct window using a floor plan or another post-facto classification method that organizes multiple images of the same church by window; upon upload, the app should attach metadata such as timestamp and verified location, rejecting submissions that do not match the church's registered coordinates; users do not need to reveal personal identity but should have an anonymous persistent app ID to track contribution volume and quality, with optional contact details, plus the ability to edit or delete their own submissions; finally, include a simple interface for users to view the immutable Arweave records and the Cardano audit trail associated with each window and upload."
+**Input**: User description: "Develop a cross-platform, install-free web app that enables users to easily record and track stained glass windows in churches, storing all image files and metadata on Arweave with an audit trail logged to the Cardano blockchain; the app should open with a simple search interface allowing users to find churches by county and town, then display an orienting visual (e.g., floor plan or spatial overlay) for the selected church; the app must detect whether windows for that church have already been photographed and display existing submissions while still allowing additional crowdsourced uploads, using AI-based image analysis to classify images, identify windows, select the clearest or largest valid photos, and filter out irrelevant or low-quality ones; the app should request location-sharing consent when needed and use the user's geolocation to verify they are at the correct church before accepting an upload; users must be able to take photos directly in the app, receive feedback on unusable shots (too dark, too bright, poorly framed, etc.), and then assign the image to the correct window using a floor plan or another post-facto classification method that organizes multiple images of the same church by window; upon upload, the app should attach metadata such as timestamp and verified location, rejecting submissions that do not match the church's registered coordinates; users do not need to reveal personal identity but should have an anonymous persistent app ID to track contribution volume and quality, plus the ability to edit or delete their own submissions; finally, include a simple interface for users to view the immutable Arweave records and the Cardano audit trail associated with each window and upload."
 
 ## Clarifications
 
@@ -14,6 +14,11 @@
 - Q: What happens when Arweave or Cardano networks are temporarily unavailable? → A: Queue uploads locally, retry automatically
 - Q: What happens when AI analysis fails or cannot classify an image? → A: Flag for manual assignment, allow upload
 - Q: What happens when a user deletes a submission - does it remove from Arweave/Cardano or just mark as deleted? → A: Mark as deleted in app, blockchain records remain
+- Q: How should the system prevent abuse and spam submissions (e.g., bulk uploads, malicious content, duplicate spam)? → A: Rate limiting per app ID (e.g., max 10 uploads/hour) with progressive delays
+- Q: How should anonymous app IDs be generated, stored, and validated to prevent spoofing while maintaining user privacy? → A: Client-side generation with server-side validation and storage (check uniqueness, prevent duplicates)
+- Q: How should the system detect and handle duplicate photo submissions (same user uploading the same photo multiple times, or different users uploading identical photos)? → A: Image hash comparison plus location/timestamp proximity check (within same window, same hour)
+- Q: What should happen when a user attempts to upload photos for a church that doesn't exist in the database? → A: Reject upload with message directing user to contact admin to add church first
+- Q: How should the system handle churches with identical names in the same county/town (e.g., multiple "St. Mary's Church" in the same location)? → A: Require unique combination of name + county + town + coordinates (prevent duplicates, coordinates provide uniqueness)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -115,20 +120,19 @@ The app automatically analyzes uploaded images using AI to classify images, iden
 
 ### User Story 5 - Anonymous User Identity and Contribution Tracking (Priority: P4)
 
-A user uses the app without revealing personal identity. They receive an anonymous persistent app ID that tracks their contribution volume and quality. They can optionally provide contact details and can edit or delete their own submissions.
+A user uses the app without revealing personal identity. They receive an anonymous persistent app ID that tracks their contribution volume and quality. They can edit or delete their own submissions.
 
 **Why this priority**: This enables user accountability and contribution tracking while respecting privacy. The ability to manage own submissions provides user control and data quality.
 
-**Independent Test**: Can be fully tested by using the app anonymously, verifying that contributions are tracked by app ID, optionally adding contact details, and managing own submissions. This delivers value as a privacy-respecting contribution system.
+**Independent Test**: Can be fully tested by using the app anonymously, verifying that contributions are tracked by app ID, and managing own submissions. This delivers value as a privacy-respecting contribution system.
 
 **Acceptance Scenarios**:
 
 1. **Given** a user opens the app for the first time, **When** they begin using it, **Then** they receive an anonymous persistent app ID automatically
 2. **Given** a user makes contributions, **When** they view their profile, **Then** they see their contribution volume and quality metrics tracked by app ID
-3. **Given** a user wants to provide contact details, **When** they access settings, **Then** they can optionally add contact information
-4. **Given** a user views their own submissions, **When** they select a submission, **Then** they can edit or delete it
-5. **Given** a user edits their submission, **When** they save changes, **Then** the updated information is reflected in the collection
-6. **Given** a user deletes their submission, **When** they confirm deletion, **Then** the submission is marked as deleted and removed from the active collection, but Arweave and Cardano records remain immutable
+3. **Given** a user views their own submissions, **When** they select a submission, **Then** they can edit or delete it
+4. **Given** a user edits their submission, **When** they save changes, **Then** the updated information is reflected in the collection
+5. **Given** a user deletes their submission, **When** they confirm deletion, **Then** the submission is marked as deleted and removed from the active collection, but Arweave and Cardano records remain immutable
 
 ---
 
@@ -152,20 +156,21 @@ A user wants to verify the immutability and provenance of window submissions. Th
 ### Edge Cases
 
 - What happens when a user's device cannot determine location (GPS disabled, indoors, etc.)? (Answer: Manual override with warning and user confirmation per FR-026)
-- How does the system handle churches with identical names in the same county/town?
+- How does the system handle churches with identical names in the same county/town? (Answer: Require unique combination of name + county + town + coordinates per FR-044)
 - What happens when a user uploads a photo but their location is more than 50 meters from the church's registered coordinates? (Answer: Submission is rejected per FR-008)
 - How does the system handle churches with no registered coordinates?
 - What happens when AI analysis fails or cannot classify an image? (Answer: Flag for manual assignment and allow upload per FR-028)
 - How does the system handle users who delete all their submissions - does their app ID remain? (Answer: App ID remains; deleted submissions are marked as deleted in app but blockchain records remain immutable per FR-021)
 - What happens when Arweave or Cardano networks are temporarily unavailable? (Answer: Queue uploads locally and retry automatically per FR-027)
-- How does the system handle duplicate submissions of the same photo?
-- What happens when a user uploads photos for a church that doesn't exist in the database?
+- How does the system handle duplicate submissions of the same photo? (Answer: Image hash comparison plus location/timestamp proximity check - reject duplicates within same window within same hour per FR-042)
+- What happens when a user uploads photos for a church that doesn't exist in the database? (Answer: Reject upload with message directing user to contact admin to add church first per FR-043)
 - How does the system handle floor plans that don't match the actual church layout?
 - What happens when required dependencies are missing or incompatible versions are installed?
 - How does the system handle port conflicts when multiple developers run services on the same machine?
 - How does the system handle database connection failures during startup?
 - What happens when environment variables are missing or invalid?
 - How does the system handle file permission issues for local storage or wallet files?
+- What happens when a user exceeds the rate limit (e.g., more than 10 uploads/hour)? (Answer: Progressive delays applied per FR-041)
 
 ## Requirements *(mandatory)*
 
@@ -190,9 +195,8 @@ A user wants to verify the immutability and provenance of window submissions. Th
 - **FR-015**: System MUST store all image files and metadata on Arweave (queue locally and retry automatically if network unavailable)
 - **FR-016**: System MUST log an audit trail to the Cardano blockchain for each upload (queue locally and retry automatically if network unavailable)
 - **FR-027**: System MUST queue uploads locally when Arweave or Cardano networks are unavailable and automatically retry until successful
-- **FR-017**: System MUST generate an anonymous persistent app ID for each user automatically
+- **FR-017**: System MUST generate an anonymous persistent app ID for each user automatically (client-side generation with server-side validation and storage to check uniqueness and prevent duplicates)
 - **FR-018**: System MUST track contribution volume and quality by app ID
-- **FR-019**: System MUST allow users to optionally provide contact details
 - **FR-020**: System MUST allow users to edit their own submissions
 - **FR-021**: System MUST allow users to delete their own submissions (marks as deleted in app; Arweave and Cardano records remain immutable)
 - **FR-022**: System MUST provide an interface for users to view Arweave records associated with each window and upload
@@ -211,13 +215,17 @@ A user wants to verify the immutability and provenance of window submissions. Th
 - **FR-038**: System MUST provide logging output that helps developers diagnose issues during local development
 - **FR-039**: System MUST support running frontend and backend on different ports to avoid conflicts
 - **FR-040**: System MUST provide example environment configuration files (.env.example) with all required variables documented
+- **FR-041**: System MUST implement rate limiting per app ID (e.g., maximum 10 uploads per hour) with progressive delays when limit is exceeded
+- **FR-042**: System MUST detect duplicate photo submissions using image hash comparison plus location/timestamp proximity check (reject duplicates within same window within same hour)
+- **FR-043**: System MUST reject uploads for churches that don't exist in the database and display a message directing users to contact admin to add the church first
+- **FR-044**: System MUST enforce uniqueness for churches based on combination of name + county + town + coordinates (prevent duplicate church records)
 
 ### Key Entities
 
 - **Church**: Represents a physical church building with registered coordinates, county, town, name, and an orienting visual (floor plan or spatial overlay). Has multiple windows.
 - **Window**: Represents a stained glass window within a church, identified by location on the floor plan. Has multiple photo submissions.
 - **Photo Submission**: Represents a user-uploaded photo of a stained glass window, containing the image file, timestamp, verified location (GPS-verified or manually verified), assigned window, and references to Arweave record and Cardano audit trail.
-- **User**: Represents an anonymous user identified by persistent app ID, with optional contact details, contribution volume, and quality metrics. Has multiple photo submissions.
+- **User**: Represents an anonymous user identified by persistent app ID, with contribution volume and quality metrics. Has multiple photo submissions.
 - **Arweave Record**: Represents the immutable storage record containing image file and metadata, referenced by photo submissions.
 - **Cardano Audit Trail**: Represents the blockchain audit log entry for a photo submission, referenced by photo submissions.
 
@@ -252,7 +260,7 @@ A user wants to verify the immutability and provenance of window submissions. Th
 - Users have devices with camera and location services capabilities when contributing photos
 - AI image analysis services are available and can process images within reasonable timeframes
 - The app will support common image formats (JPEG, PNG) from device cameras
-- Anonymous app IDs are generated client-side and stored locally, with server-side association for contribution tracking
+- Anonymous app IDs are generated client-side (e.g., UUID v4 or crypto.randomUUID()) and stored locally, with server-side validation and storage to check uniqueness and prevent duplicates/spoofing
 - Users understand that deleting submissions removes them from the active collection but blockchain records remain immutable (Arweave and Cardano records cannot be deleted)
 - Developers have access to a standard development machine (macOS, Linux, or Windows) with administrative privileges
 - Developers have basic familiarity with command-line tools and package managers

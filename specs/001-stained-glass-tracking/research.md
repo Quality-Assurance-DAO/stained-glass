@@ -100,7 +100,7 @@
 - Churches table: id, name, county, town, coordinates (lat/lng), floor_plan_url
 - Windows table: id, church_id, location_identifier, floor_plan_coordinates
 - Photo_Submissions table: id, window_id, user_id, arweave_tx_id, cardano_tx_hash, timestamp, location_verified, image_url, metadata (JSON)
-- Users table: id, app_id (anonymous), contact_details (optional JSON), contribution_stats (JSON)
+- Users table: id, app_id (anonymous), contribution_stats (JSON)
 
 ### AI/ML Image Analysis
 
@@ -249,7 +249,7 @@
 - Input validation and sanitization
 - Rate limiting on API endpoints
 - Anonymous user IDs stored client-side (IndexedDB)
-- No PII required (optional contact details)
+- No PII required (fully anonymous)
 
 **Rationale**:
 - HTTPS: Required for secure camera and geolocation access

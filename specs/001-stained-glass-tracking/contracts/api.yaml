@@ -435,7 +435,7 @@ paths:
       tags:
         - users
       summary: Update user profile
-      description: Update user contact details (optional)
+      description: Update user profile (currently no updatable fields)
       operationId: updateUserProfile
       parameters:
         - name: appId
@@ -445,15 +445,12 @@ paths:
             type: string
           description: User app ID
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
               type: object
-              properties:
-                contact_details:
-                  type: object
-                  description: Optional contact information
+              properties: {}
       responses:
         '200':
           description: Profile updated successfully
@@ -702,9 +699,6 @@ components:
           format: uuid
         app_id:
           type: string
-        contact_details:
-          type: object
-          nullable: true
         contribution_count:
           type: integer
         contribution_quality_avg:

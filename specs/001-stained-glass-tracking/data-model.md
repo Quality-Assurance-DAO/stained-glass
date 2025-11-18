@@ -122,12 +122,11 @@ Represents a user-uploaded photo of a stained glass window, containing the image
 
 ### User
 
-Represents an anonymous user identified by persistent app ID, with optional contact details and contribution tracking.
+Represents an anonymous user identified by persistent app ID, with contribution tracking.
 
 **Fields**:
 - `id` (UUID, Primary Key): Unique identifier
 - `app_id` (String, Unique, Required, Indexed): Anonymous persistent app ID (generated client-side)
-- `contact_details` (JSON, Optional): Optional contact information (email, name, etc.)
 - `contribution_count` (Integer, Default: 0): Total number of photo submissions
 - `contribution_quality_avg` (Decimal, Optional): Average quality score of contributions
 - `created_at` (Timestamp): Record creation timestamp

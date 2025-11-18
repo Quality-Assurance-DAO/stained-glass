@@ -185,9 +185,9 @@ description: "Task list for Stained Glass Window Tracking App implementation"
 
 ## Phase 7: User Story 5 - Anonymous User Identity and Contribution Tracking (Priority: P4)
 
-**Goal**: Users receive anonymous persistent app IDs, can optionally provide contact details, track contributions, and manage their own submissions.
+**Goal**: Users receive anonymous persistent app IDs, track contributions, and manage their own submissions.
 
-**Independent Test**: Can be fully tested by using the app anonymously, verifying that contributions are tracked by app ID, optionally adding contact details, and managing own submissions.
+**Independent Test**: Can be fully tested by using the app anonymously, verifying that contributions are tracked by app ID, and managing own submissions.
 
 ### Implementation for User Story 5
 
@@ -197,7 +197,6 @@ description: "Task list for Stained Glass Window Tracking App implementation"
 - [ ] T094 [US5] Add contribution tracking logic (count, quality average) to UserService in backend/src/services/UserService.ts
 - [ ] T095 [US5] Update PhotoSubmissionService to update user contribution stats in backend/src/services/PhotoSubmissionService.ts
 - [ ] T096 [US5] Create GET /users/{appId} endpoint in backend/src/api/routes/users.ts
-- [ ] T097 [US5] Create PATCH /users/{appId} endpoint for contact details in backend/src/api/routes/users.ts
 - [ ] T098 [US5] Create GET /users/{appId}/submissions endpoint in backend/src/api/routes/users.ts
 - [ ] T099 [US5] Create UserProfilePage component in frontend/src/pages/UserProfilePage.tsx
 - [ ] T100 [US5] Create UserSubmissionsList component in frontend/src/components/UserSubmissionsList.tsx
