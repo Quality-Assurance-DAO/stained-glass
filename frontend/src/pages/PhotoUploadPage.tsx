@@ -59,16 +59,19 @@ export function PhotoUploadPage() {
     setUserLatitude(lat);
     setUserLongitude(lon);
     setLocationVerified(verified);
+    setUploadError(undefined); // Clear any previous errors
   };
 
   const handleUpload = () => {
     if (!photoFile || !churchId || !appId || userLatitude === null || userLongitude === null) {
+      setUploadError('Missing required information. Please ensure all fields are filled.');
       return;
     }
 
     setStep('uploading');
     setUploadStatus('uploading');
     setUploadProgress(0);
+    setUploadError(undefined);
 
     uploadMutation.mutate({
       user_id: appId,
@@ -142,6 +145,11 @@ export function PhotoUploadPage() {
         {step === 'capture' && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Step 1: Capture Photo</h2>
+            {uploadError && (
+              <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-sm text-red-800">{uploadError}</p>
+              </div>
+            )}
             <PhotoCapture
               onPhotoCapture={handlePhotoCapture}
               onError={(error) => {
@@ -179,14 +187,29 @@ export function PhotoUploadPage() {
                     <p>Photo: {photoFile.name}</p>
                     <p>Location: {userLatitude.toFixed(6)}, {userLongitude.toFixed(6)}</p>
                     <p>Verification: {locationVerified ? 'GPS Verified' : 'Manually Verified'}</p>
+                    {qualityAssessment && (
+                      <p className="mt-2">
+                        Quality Score: {Math.round(qualityAssessment.overallScore * 100)}%
+                      </p>
+                    )}
                   </div>
+                  {uploadError && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                      <p className="text-sm text-red-800">{uploadError}</p>
+                    </div>
+                  )}
                   <button
                     onClick={handleUpload}
-                    disabled={uploadMutation.isPending}
+                    disabled={uploadMutation.isPending || !appId}
                     className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
                     {uploadMutation.isPending ? 'Uploading...' : 'Upload Photo'}
                   </button>
+                  {!appId && (
+                    <p className="text-xs text-gray-500 text-center">
+                      Loading app ID...
+                    </p>
+                  )}
                 </div>
               </div>
             )}

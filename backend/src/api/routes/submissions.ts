@@ -151,28 +151,46 @@ router.post(
     } catch (error: any) {
       logger.error('Error creating photo submission', { error, body: req.body });
 
-      // Handle known errors
+      // Handle known errors with specific status codes
       if (error.message.includes('does not exist')) {
         return res.status(404).json({
           error: 'Church not found',
+          message: 'The specified church does not exist in the database. Please contact admin to add the church first.',
+        });
+      }
+
+      if (error.message.includes('coordinates') || error.message.includes('valid coordinates')) {
+        return res.status(400).json({
+          error: 'Invalid church coordinates',
+          message: 'Church does not have valid coordinates. Please contact admin to add coordinates first.',
+        });
+      }
+
+      if (error.message.includes('Location too far')) {
+        return res.status(400).json({
+          error: 'Location verification failed',
           message: error.message,
         });
       }
 
-      if (
-        error.message.includes('coordinates') ||
-        error.message.includes('Location too far') ||
-        error.message.includes('Duplicate submission')
-      ) {
-        return res.status(400).json({
-          error: 'Validation error',
-          message: error.message,
+      if (error.message.includes('Duplicate submission') || error.message.includes('duplicate')) {
+        return res.status(409).json({
+          error: 'Duplicate submission',
+          message: 'This photo has already been uploaded recently at this location.',
+        });
+      }
+
+      // Rate limit errors are handled by middleware, but catch any edge cases
+      if (error.message.includes('rate limit') || error.message.includes('too many')) {
+        return res.status(429).json({
+          error: 'Rate limit exceeded',
+          message: 'Maximum 10 uploads per hour. Please try again later.',
         });
       }
 
       res.status(500).json({
         error: 'Internal server error',
-        message: 'Failed to create photo submission',
+        message: 'Failed to create photo submission. Please try again later.',
       });
     }
   }

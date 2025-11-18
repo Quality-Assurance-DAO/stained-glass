@@ -93,17 +93,21 @@ export class LocationService {
 
   /**
    * Check if church has valid coordinates
+   * Handles both number and Decimal types from Prisma
    */
-  hasValidCoordinates(churchLat: number | null, churchLon: number | null): boolean {
+  hasValidCoordinates(churchLat: number | null | undefined, churchLon: number | null | undefined): boolean {
+    const lat = churchLat !== null && churchLat !== undefined ? Number(churchLat) : null;
+    const lon = churchLon !== null && churchLon !== undefined ? Number(churchLon) : null;
+    
     return (
-      churchLat !== null &&
-      churchLon !== null &&
-      !isNaN(Number(churchLat)) &&
-      !isNaN(Number(churchLon)) &&
-      churchLat >= -90 &&
-      churchLat <= 90 &&
-      churchLon >= -180 &&
-      churchLon <= 180
+      lat !== null &&
+      lon !== null &&
+      !isNaN(lat) &&
+      !isNaN(lon) &&
+      lat >= -90 &&
+      lat <= 90 &&
+      lon >= -180 &&
+      lon <= 180
     );
   }
 }

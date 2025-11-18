@@ -83,9 +83,12 @@ export default function LocationVerification({
   };
 
   const handleManualOverride = () => {
-    if (manualConfirm && userLatitude && userLongitude) {
+    if (manualConfirm) {
+      // If we have coordinates, use them; otherwise use church coordinates as fallback
+      const lat = userLatitude ?? churchLatitude;
+      const lon = userLongitude ?? churchLongitude;
       setStatus('manual');
-      onVerified(userLatitude, userLongitude, false);
+      onVerified(lat, lon, false);
     }
   };
 
@@ -151,7 +154,7 @@ export default function LocationVerification({
               You are {Math.round(distance)}m from the church (maximum 50m allowed)
             </p>
           )}
-          {!userLatitude && (
+          {(!userLatitude || !userLongitude) && (
             <p className="text-sm text-yellow-700 mt-1">
               Could not determine your location. You can manually verify that you are at the correct church.
             </p>

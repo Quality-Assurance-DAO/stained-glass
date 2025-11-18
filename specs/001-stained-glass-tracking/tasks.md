@@ -169,33 +169,33 @@ Every task follows this strict format:
 
 ### Implementation for User Story 2
 
-- [ ] T065 [P] [US2] Create User model entity in backend/prisma/schema.prisma
-- [ ] T066 [US2] Create database migration for users table in backend/prisma/migrations/
-- [ ] T067 [US2] Implement location verification service using Haversine formula (50-meter tolerance) in backend/src/services/LocationService.ts
-- [ ] T068 [P] [US2] Implement photo quality assessment service (brightness, contrast, blur detection) in frontend/src/utils/imageQuality.ts
-- [ ] T069 [P] [US2] Create photo capture component with camera access in frontend/src/components/PhotoCapture.tsx
-- [ ] T070 [US2] Implement real-time photo quality feedback UI in frontend/src/components/PhotoQualityFeedback.tsx
-- [ ] T071 [P] [US2] Create geolocation service wrapper with permission handling in frontend/src/utils/geolocation.ts
-- [ ] T072 [US2] Implement location verification component with manual override option in frontend/src/components/LocationVerification.tsx
-- [ ] T073 [US2] Create PhotoUploadPage component in frontend/src/pages/PhotoUploadPage.tsx
-- [ ] T074 [US2] Implement POST /submissions endpoint with location verification in backend/src/api/routes/submissions.ts
-- [ ] T075 [US2] Add file upload handling with Multer middleware in backend/src/api/middleware/upload.ts
-- [ ] T076 [US2] Implement PhotoSubmissionService.create method with location validation in backend/src/services/PhotoSubmissionService.ts
-- [ ] T077 [US2] Add validation for photo upload (file type, size, required fields) in backend/src/api/routes/submissions.ts
-- [ ] T078 [US2] Implement image hash calculation (SHA-256) for duplicate detection in backend/src/utils/imageHash.ts
-- [ ] T079 [US2] Add duplicate detection logic (image hash + location + timestamp) in backend/src/services/PhotoSubmissionService.ts
-- [ ] T080 [US2] Implement upload queue service using database table for offline support in backend/src/services/UploadQueueService.ts
-- [ ] T081 [US2] Create UploadQueue model in backend/prisma/schema.prisma
-- [ ] T082 [US2] Create database migration for upload_queue table in backend/prisma/migrations/
-- [ ] T083 [US2] Implement upload retry mechanism with exponential backoff in backend/src/services/UploadQueueService.ts
-- [ ] T084 [US2] Implement API service method for photo upload in frontend/src/services/api/submissions.ts
-- [ ] T085 [US2] Add React Query mutation for photo upload in frontend/src/hooks/usePhotoUpload.ts
-- [ ] T086 [US2] Add upload progress and status feedback UI in frontend/src/components/UploadStatus.tsx
-- [ ] T087 [US2] Add error handling for location verification failures in frontend and backend
-- [ ] T088 [US2] Implement manual location override confirmation flow in frontend/src/components/LocationVerification.tsx
-- [ ] T089 [US2] Add rate limiting middleware (10 uploads/hour per app ID) in backend/src/api/middleware/rateLimit.ts
-- [ ] T090 [US2] Add validation to reject uploads for churches without coordinates in backend/src/services/PhotoSubmissionService.ts
-- [ ] T091 [US2] Add validation to reject uploads for churches that don't exist in backend/src/services/PhotoSubmissionService.ts
+- [X] T065 [P] [US2] Create User model entity in backend/prisma/schema.prisma
+- [X] T066 [US2] Create database migration for users table in backend/prisma/migrations/
+- [X] T067 [US2] Implement location verification service using Haversine formula (50-meter tolerance) in backend/src/services/LocationService.ts
+- [X] T068 [P] [US2] Implement photo quality assessment service (brightness, contrast, blur detection) in frontend/src/utils/imageQuality.ts
+- [X] T069 [P] [US2] Create photo capture component with camera access in frontend/src/components/PhotoCapture.tsx
+- [X] T070 [US2] Implement real-time photo quality feedback UI in frontend/src/components/PhotoQualityFeedback.tsx
+- [X] T071 [P] [US2] Create geolocation service wrapper with permission handling in frontend/src/utils/geolocation.ts
+- [X] T072 [US2] Implement location verification component with manual override option in frontend/src/components/LocationVerification.tsx
+- [X] T073 [US2] Create PhotoUploadPage component in frontend/src/pages/PhotoUploadPage.tsx
+- [X] T074 [US2] Implement POST /submissions endpoint with location verification in backend/src/api/routes/submissions.ts
+- [X] T075 [US2] Add file upload handling with Multer middleware in backend/src/api/middleware/upload.ts
+- [X] T076 [US2] Implement PhotoSubmissionService.create method with location validation in backend/src/services/PhotoSubmissionService.ts
+- [X] T077 [US2] Add validation for photo upload (file type, size, required fields) in backend/src/api/routes/submissions.ts
+- [X] T078 [US2] Implement image hash calculation (SHA-256) for duplicate detection in backend/src/utils/imageHash.ts
+- [X] T079 [US2] Add duplicate detection logic (image hash + location + timestamp) in backend/src/services/PhotoSubmissionService.ts
+- [X] T080 [US2] Implement upload queue service using database table for offline support in backend/src/services/UploadQueueService.ts
+- [X] T081 [US2] Create UploadQueue model in backend/prisma/schema.prisma
+- [X] T082 [US2] Create database migration for upload_queue table in backend/prisma/migrations/
+- [X] T083 [US2] Implement upload retry mechanism with exponential backoff in backend/src/services/UploadQueueService.ts
+- [X] T084 [US2] Implement API service method for photo upload in frontend/src/services/api/submissions.ts
+- [X] T085 [US2] Add React Query mutation for photo upload in frontend/src/hooks/usePhotoUpload.ts
+- [X] T086 [US2] Add upload progress and status feedback UI in frontend/src/components/UploadStatus.tsx
+- [X] T087 [US2] Add error handling for location verification failures in frontend and backend
+- [X] T088 [US2] Implement manual location override confirmation flow in frontend/src/components/LocationVerification.tsx
+- [X] T089 [US2] Add rate limiting middleware (10 uploads/hour per app ID) in backend/src/api/middleware/rateLimit.ts
+- [X] T090 [US2] Add validation to reject uploads for churches without coordinates in backend/src/services/PhotoSubmissionService.ts
+- [X] T091 [US2] Add validation to reject uploads for churches that don't exist in backend/src/services/PhotoSubmissionService.ts
 
 **Checkpoint**: At this point, User Story 2 should be fully functional. Users can capture photos, receive quality feedback, verify location, and upload photos with metadata.
 
