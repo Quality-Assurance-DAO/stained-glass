@@ -3,6 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/queryClient';
 import { ChurchSearchPage } from './pages/ChurchSearchPage';
 import { ChurchDetailPage } from './pages/ChurchDetailPage';
+import { PhotoUploadPage } from './pages/PhotoUploadPage';
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
         <Routes>
           <Route path="/" element={<ChurchSearchPage />} />
           <Route path="/churches/:churchId" element={<ChurchDetailPage />} />
+          <Route path="/churches/:churchId/upload" element={<PhotoUploadPage />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

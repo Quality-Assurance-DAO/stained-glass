@@ -65,13 +65,23 @@ export function ChurchDetailPage() {
         </button>
 
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{church.name}</h1>
-          <p className="text-lg text-gray-600">
-            {church.town}, {church.county}
-          </p>
-          <p className="text-sm text-gray-500 mt-2">
-            Coordinates: {church.latitude.toFixed(6)}, {church.longitude.toFixed(6)}
-          </p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{church.name}</h1>
+              <p className="text-lg text-gray-600">
+                {church.town}, {church.county}
+              </p>
+              <p className="text-sm text-gray-500 mt-2">
+                Coordinates: {church.latitude.toFixed(6)}, {church.longitude.toFixed(6)}
+              </p>
+            </div>
+            <button
+              onClick={() => navigate(`/churches/${churchId}/upload`)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Upload Photo
+            </button>
+          </div>
         </div>
 
         {church.floor_plan_url && (
