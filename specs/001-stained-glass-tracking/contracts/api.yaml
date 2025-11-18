@@ -1,0 +1,797 @@
+openapi: 3.0.3
+info:
+  title: Stained Glass Window Tracking API
+  description: REST API for tracking stained glass windows in churches with Arweave storage and Cardano audit trail
+  version: 1.0.0
+  contact:
+    name: API Support
+
+servers:
+  - url: https://api.example.com/v1
+    description: Production server
+  - url: http://localhost:3000/v1
+    description: Development server
+
+tags:
+  - name: churches
+    description: Church search and details
+  - name: windows
+    description: Window management
+  - name: submissions
+    description: Photo submission management
+  - name: users
+    description: User profile and contributions
+  - name: blockchain
+    description: Blockchain record viewing
+
+paths:
+  /churches/search:
+    get:
+      tags:
+        - churches
+      summary: Search churches by county and town
+      description: Search for churches by county and town. Returns matching churches with basic information.
+      operationId: searchChurches
+      parameters:
+        - name: county
+          in: query
+          required: true
+          schema:
+            type: string
+          description: County name to search
+        - name: town
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Town/city name to search
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Page number for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+          description: Number of results per page
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  churches:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ChurchSummary'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /churches/{churchId}:
+    get:
+      tags:
+        - churches
+      summary: Get church details
+      description: Get detailed information about a church including floor plan and windows
+      operationId: getChurchDetails
+      parameters:
+        - name: churchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Church UUID
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChurchDetails'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /churches/{churchId}/windows:
+    get:
+      tags:
+        - windows
+      summary: Get windows for a church
+      description: Get all windows for a church with their photo submissions
+      operationId: getChurchWindows
+      parameters:
+        - name: churchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Church UUID
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  windows:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WindowWithSubmissions'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /submissions:
+    post:
+      tags:
+        - submissions
+      summary: Upload photo submission
+      description: Upload a photo with location verification. Photo is queued for Arweave upload and Cardano audit trail.
+      operationId: uploadPhotoSubmission
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+                - latitude
+                - longitude
+                - timestamp
+                - app_id
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Image file (JPEG or PNG)
+                latitude:
+                  type: number
+                  format: double
+                  description: GPS latitude where photo was taken
+                longitude:
+                  type: number
+                  format: double
+                  description: GPS longitude where photo was taken
+                timestamp:
+                  type: string
+                  format: date-time
+                  description: When photo was taken
+                app_id:
+                  type: string
+                  description: Anonymous user app ID
+                church_id:
+                  type: string
+                  format: uuid
+                  description: Target church ID (for location verification)
+                location_verified:
+                  type: boolean
+                  default: true
+                  description: Whether location was GPS-verified (false for manual override)
+      responses:
+        '201':
+          description: Photo submission created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhotoSubmission'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          description: Location verification failed (more than 50 meters from church)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /submissions/{submissionId}:
+    get:
+      tags:
+        - submissions
+      summary: Get photo submission details
+      description: Get detailed information about a photo submission including blockchain records
+      operationId: getPhotoSubmission
+      parameters:
+        - name: submissionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Photo submission UUID
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhotoSubmissionDetails'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      tags:
+        - submissions
+      summary: Update photo submission
+      description: Update photo submission metadata (user can edit their own submissions)
+      operationId: updatePhotoSubmission
+      parameters:
+        - name: submissionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Photo submission UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                window_id:
+                  type: string
+                  format: uuid
+                  nullable: true
+                  description: Assign submission to a window
+                metadata:
+                  type: object
+                  description: Additional metadata
+      responses:
+        '200':
+          description: Submission updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhotoSubmission'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          description: User does not own this submission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - submissions
+      summary: Delete photo submission
+      description: Soft delete a photo submission (marks as deleted, blockchain records remain immutable)
+      operationId: deletePhotoSubmission
+      parameters:
+        - name: submissionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Photo submission UUID
+        - name: app_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: User app ID for verification
+      responses:
+        '204':
+          description: Submission deleted successfully
+        '403':
+          description: User does not own this submission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /submissions/{submissionId}/assign:
+    post:
+      tags:
+        - submissions
+      summary: Assign photo to window
+      description: Assign a photo submission to a specific window using floor plan
+      operationId: assignPhotoToWindow
+      parameters:
+        - name: submissionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Photo submission UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - window_id
+              properties:
+                window_id:
+                  type: string
+                  format: uuid
+                  description: Window UUID to assign photo to
+      responses:
+        '200':
+          description: Photo assigned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhotoSubmission'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users/{appId}/submissions:
+    get:
+      tags:
+        - users
+      summary: Get user's photo submissions
+      description: Get all photo submissions for a user by app ID
+      operationId: getUserSubmissions
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User app ID
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  submissions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PhotoSubmission'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users/{appId}:
+    get:
+      tags:
+        - users
+      summary: Get user profile
+      description: Get user profile with contribution statistics
+      operationId: getUserProfile
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User app ID
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      tags:
+        - users
+      summary: Update user profile
+      description: Update user contact details (optional)
+      operationId: updateUserProfile
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User app ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                contact_details:
+                  type: object
+                  description: Optional contact information
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /blockchain/arweave/{txId}:
+    get:
+      tags:
+        - blockchain
+      summary: Get Arweave record
+      description: Get Arweave record details by transaction ID
+      operationId: getArweaveRecord
+      parameters:
+        - name: txId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Arweave transaction ID
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArweaveRecord'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /blockchain/cardano/{txHash}:
+    get:
+      tags:
+        - blockchain
+      summary: Get Cardano audit trail
+      description: Get Cardano transaction details by transaction hash
+      operationId: getCardanoAuditTrail
+      parameters:
+        - name: txHash
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Cardano transaction hash
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardanoAuditTrail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    ChurchSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        county:
+          type: string
+        town:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+
+    ChurchDetails:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        county:
+          type: string
+        town:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        floor_plan_url:
+          type: string
+          format: uri
+          nullable: true
+        floor_plan_coordinates:
+          type: object
+          nullable: true
+        windows:
+          type: array
+          items:
+            $ref: '#/components/schemas/WindowSummary'
+
+    WindowSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        location_identifier:
+          type: string
+        floor_plan_coordinates:
+          type: object
+          nullable: true
+        primary_photo_url:
+          type: string
+          format: uri
+          nullable: true
+        photo_count:
+          type: integer
+
+    WindowWithSubmissions:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        location_identifier:
+          type: string
+        floor_plan_coordinates:
+          type: object
+          nullable: true
+        submissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/PhotoSubmissionSummary'
+
+    PhotoSubmissionSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        image_url:
+          type: string
+          format: uri
+        timestamp:
+          type: string
+          format: date-time
+        quality_score:
+          type: number
+          format: double
+          nullable: true
+        is_primary:
+          type: boolean
+
+    PhotoSubmission:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        window_id:
+          type: string
+          format: uuid
+          nullable: true
+        user_id:
+          type: string
+          format: uuid
+        image_url:
+          type: string
+          format: uri
+        arweave_tx_id:
+          type: string
+          nullable: true
+        cardano_tx_hash:
+          type: string
+          nullable: true
+        timestamp:
+          type: string
+          format: date-time
+        location_latitude:
+          type: number
+          format: double
+        location_longitude:
+          type: number
+          format: double
+        location_verified:
+          type: boolean
+        location_distance_meters:
+          type: number
+          format: double
+          nullable: true
+        quality_score:
+          type: number
+          format: double
+          nullable: true
+        is_primary:
+          type: boolean
+        is_deleted:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    PhotoSubmissionDetails:
+      allOf:
+        - $ref: '#/components/schemas/PhotoSubmission'
+        - type: object
+          properties:
+            ai_classification:
+              type: object
+              nullable: true
+            metadata:
+              type: object
+              nullable: true
+            arweave_record:
+              $ref: '#/components/schemas/ArweaveRecord'
+              nullable: true
+            cardano_audit_trail:
+              $ref: '#/components/schemas/CardanoAuditTrail'
+              nullable: true
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        app_id:
+          type: string
+        contact_details:
+          type: object
+          nullable: true
+        contribution_count:
+          type: integer
+        contribution_quality_avg:
+          type: number
+          format: double
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    ArweaveRecord:
+      type: object
+      properties:
+        tx_id:
+          type: string
+        image_url:
+          type: string
+          format: uri
+        metadata:
+          type: object
+        block_height:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+        explorer_url:
+          type: string
+          format: uri
+
+    CardanoAuditTrail:
+      type: object
+      properties:
+        tx_hash:
+          type: string
+        block_height:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+        audit_data:
+          type: object
+        explorer_url:
+          type: string
+          format: uri
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        total_pages:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          nullable: true
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
