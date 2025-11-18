@@ -11,6 +11,55 @@ A cross-platform web application for tracking and documenting stained glass wind
 - **Blockchain Storage**: Immutable storage on Arweave with Cardano audit trail
 - **Anonymous Users**: Persistent app IDs for contribution tracking
 
+## User Guide
+
+### 1. Search for Churches
+
+Start by searching for churches using county and town filters. Enter either a county name, town name, or both to find matching churches.
+
+![Search Interface](Assets/images/screenshots/Search.png)
+
+### 2. View Church Details
+
+Click on a church from the search results to view its details, including location information and available floor plans.
+
+![Church Record](Assets/images/screenshots/Church-Record.png)
+
+### 3. Explore Floor Plans
+
+Churches with floor plans display an interactive map showing window locations. Use the floor plan to understand the layout and identify specific windows.
+
+![Floor Plan](Assets/images/screenshots/Floorplan.png)
+
+### 4. Upload Photos
+
+When visiting a church, capture photos directly in the app. The app will:
+- Assess photo quality and provide feedback
+- Verify your location matches the church coordinates
+- Guide you through the upload process
+
+![Photo Upload](Assets/images/screenshots/Upload-Photo.png)
+
+### 5. View Window Details
+
+Browse existing window submissions and view detailed information about each window, including photos, metadata, and blockchain records.
+
+![Window Detail](Assets/images/screenshots/Window-Detail.png)
+
+![Window Image](Assets/images/screenshots/Window image.png)
+
+### 6. Manage Your Profile
+
+Access your profile to view your contribution statistics, including total submissions and average quality scores. Your anonymous app ID is stored locally and never shared.
+
+![Your Profile](Assets/images/screenshots/Your-Profile.png)
+
+### 7. Report Mismatches
+
+If you notice incorrect information or misassigned photos, use the mismatch reporting feature to flag issues for review.
+
+![Report Mismatch](Assets/images/screenshots/Report-Mismatch.png)
+
 ## Prerequisites
 
 - **Node.js**: 20.x LTS or higher
