@@ -247,38 +247,52 @@ async function seedTestData() {
       }
     }
 
-    // Create one unassigned photo submission (for testing assignment flow)
+    // Create one unassigned photo submission for All Saints Church (for testing assignment flow)
+    const allSaintsWindows = await prisma.window.findMany({
+      where: { church_id: church3.id },
+    });
+
     const unassignedSubmission = await prisma.photoSubmission.create({
       data: {
         user_id: user1.app_id,
-        window_id: null, // Not yet assigned
-        image_hash: generateImageHash(`unassigned-1`),
+        window_id: null, // Not yet assigned - user needs to assign it via PhotoAssignmentPage
+        image_hash: generateImageHash(`all-saints-unassigned-1`),
         timestamp: new Date('2024-03-15T12:00:00Z'),
-        latitude: 51.2794,
+        latitude: 51.2794, // All Saints Church coordinates
         longitude: 1.0800,
         location_verified: true,
         metadata: {
           description: 'Unassigned photo - needs window assignment',
           quality_score: 0.85,
+          photographer_notes: 'Photo taken but not yet assigned to a specific window',
         },
       },
     });
+
+    // Count contributions per user
+    const user1Contributions = [
+      ...stMarysSubmissions.filter((s) => s.user_id === user1.app_id),
+      ...stPetersSubmissions.filter((s) => s.user_id === user1.app_id),
+      unassignedSubmission,
+    ].length;
+
+    const user2Contributions = [
+      ...stMarysSubmissions.filter((s) => s.user_id === user2.app_id),
+      ...stPetersSubmissions.filter((s) => s.user_id === user2.app_id),
+    ].length;
 
     // Update user contribution counts
     await prisma.user.update({
       where: { app_id: user1.app_id },
       data: {
-        contribution_count: stMarysSubmissions.filter((s) => s.user_id === user1.app_id).length +
-          stPetersSubmissions.filter((s) => s.user_id === user1.app_id).length +
-          1, // +1 for unassigned
+        contribution_count: user1Contributions,
       },
     });
 
     await prisma.user.update({
       where: { app_id: user2.app_id },
       data: {
-        contribution_count: stMarysSubmissions.filter((s) => s.user_id === user2.app_id).length +
-          stPetersSubmissions.filter((s) => s.user_id === user2.app_id).length,
+        contribution_count: user2Contributions,
       },
     });
 

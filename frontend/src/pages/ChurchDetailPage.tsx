@@ -5,11 +5,13 @@ import { useWindowsByChurch } from '../hooks/useWindows';
 import { FloorPlan } from '../components/FloorPlan';
 import { WindowList } from '../components/WindowList';
 import { FloorPlanMismatchReport } from '../components/FloorPlanMismatchReport';
+import { WindowDetail } from '../components/WindowDetail';
 
 export function ChurchDetailPage() {
   const { churchId } = useParams<{ churchId: string }>();
   const navigate = useNavigate();
   const [selectedWindowId, setSelectedWindowId] = useState<string | null>(null);
+  const [detailWindowId, setDetailWindowId] = useState<string | null>(null);
 
   const {
     data: church,
@@ -138,6 +140,7 @@ export function ChurchDetailPage() {
               selectedWindowId={selectedWindowId}
               onWindowClick={(windowId) => {
                 setSelectedWindowId(windowId);
+                setDetailWindowId(windowId);
                 // Scroll to window in floor plan if needed
                 const element = document.getElementById(`window-${windowId}`);
                 if (element) {
@@ -151,6 +154,22 @@ export function ChurchDetailPage() {
             />
           )}
         </div>
+
+        {/* Window Detail Modal */}
+        {detailWindowId && windowsData && (() => {
+          const detailWindow = windowsData.windows.find((w) => w.id === detailWindowId);
+          return detailWindow ? (
+            <WindowDetail
+              window={detailWindow}
+              churchName={church.name}
+              onClose={() => setDetailWindowId(null)}
+              onPhotoClick={(windowId, submissionId) => {
+                // Could navigate to photo detail page in future
+                console.log('Photo clicked in detail view:', windowId, submissionId);
+              }}
+            />
+          ) : null;
+        })()}
       </div>
     </div>
   );
