@@ -46,8 +46,6 @@ Browse existing window submissions and view detailed information about each wind
 
 ![Window Detail](Assets/images/screenshots/Window-Detail.png)
 
-![Window Image](Assets/images/screenshots/Window image.png)
-
 ### 6. Manage Your Profile
 
 Access your profile to view your contribution statistics, including total submissions and average quality scores. Your anonymous app ID is stored locally and never shared.
